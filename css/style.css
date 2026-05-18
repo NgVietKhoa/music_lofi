@@ -1226,46 +1226,362 @@ html, body {
   border-radius: 4px;
 }
 
-/* ========== RESPONSIVE ========== */
-@media (max-width: 900px) {
+/* ========== MOBILE: CHỈ DÙNG MÀN NGANG ========== */
+.rotate-hint {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: max(20px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom));
+  text-align: center;
+  background: rgba(12, 10, 8, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.rotate-hint-icon {
+  font-size: 2.8rem;
+  line-height: 1;
+  color: var(--warm-mid);
+  animation: rotate-hint-spin 2.4s ease-in-out infinite;
+}
+
+.rotate-hint-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--warm-light);
+}
+
+.rotate-hint-text {
+  font-size: 0.85rem;
+  color: var(--warm-mid);
+  max-width: 280px;
+  line-height: 1.45;
+}
+
+@keyframes rotate-hint-spin {
+  0%, 100% { transform: rotate(-90deg); }
+  50% { transform: rotate(0deg); }
+}
+
+/* Portrait trên mobile / tablet hẹp → nhắc xoay ngang, ẩn UI */
+@media (max-width: 900px) and (orientation: portrait) {
+  .rotate-hint {
+    display: flex;
+  }
+
+  .dock,
+  .widget-modal,
+  .modal-backdrop,
+  .gallery-backdrop,
+  .gallery-panel {
+    visibility: hidden !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+  }
+}
+
+/* Tablet ngang & mobile ngang */
+@media (max-width: 900px) and (orientation: landscape),
+       (max-height: 520px) and (orientation: landscape) {
   .dock {
-    bottom: calc(40px + env(safe-area-inset-bottom, 0px));
-    padding: 8px 14px;
-    gap: 6px;
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    right: auto;
+    padding: 6px 10px;
+    gap: 4px;
+    border-radius: 12px;
+    max-width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+  }
+
+  .dock-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 9px;
+  }
+
+  .dock-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .dock-divider {
+    height: 26px;
+    margin: 0 1px;
+  }
+
+  .glass {
+    padding: 10px 12px;
     border-radius: 14px;
   }
-  .dock-btn { width: 50px; height: 50px; border-radius: 10px; }
-  .dock-btn svg { width: 24px; height: 24px; }
-  .dock-divider { height: 30px; }
-  .widget-modal { bottom: calc(118px + env(safe-area-inset-bottom, 0px)); max-height: 62vh; }
+
+  .modal-header {
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .modal-header .panel-title {
+    font-size: 0.95rem;
+  }
+
+  .widget-modal {
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    right: auto;
+    width: min(calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)), 920px);
+    max-height: calc(100dvh - 68px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow: hidden;
+    padding: 10px 12px;
+  }
+
+  .widget-modal.open {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  /* Music: giữ 3 cột ngang */
   .widget-modal--music {
-    width: min(96vw, 100%);
-    height: min(640px, calc(78vh - 24px));
-    max-height: min(640px, calc(78vh - 24px));
+    width: min(calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)), 920px);
+    height: calc(100dvh - 68px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 68px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
+
   .music-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(200px, 1fr) auto auto;
-    overflow-y: auto;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr) minmax(0, 0.8fr);
+    gap: 8px;
     min-height: 0;
-    padding-right: 2px;
   }
-  .music-col--search .yt-search-results {
-    min-height: 200px;
+
+  .music-col--search,
+  .music-col--playlist {
+    padding: 8px;
   }
-  .music-col--playlist .playlist {
-    min-height: 120px;
-    max-height: 160px;
+
+  .music-section-label {
+    font-size: 0.58rem;
+    margin-bottom: 4px;
   }
+
+  .yt-search-input {
+    font-size: 0.75rem;
+    padding: 7px 9px;
+  }
+
+  .yt-search-btn {
+    width: 36px;
+  }
+
+  .yt-search-results {
+    margin-top: 6px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .yt-search-results-body {
+    min-height: 0;
+  }
+
+  .music-col--player,
+  .music-playlist-wrap {
+    min-height: 0;
+  }
+
+  .yt-result-item {
+    padding: 6px 7px;
+    gap: 7px;
+  }
+
+  .yt-result-thumb {
+    width: 44px;
+    height: 33px;
+  }
+
+  .yt-result-title {
+    font-size: 0.72rem;
+    -webkit-line-clamp: 2;
+  }
+
+  .yt-result-sub {
+    font-size: 0.58rem;
+  }
+
   .music-col--player .player-header {
     flex-direction: row;
+    align-items: center;
     text-align: left;
-    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
   }
-  .gallery-grid { grid-template-columns: repeat(4, 1fr); }
-  .clock-body { gap: 16px; }
-  .clock-analog { width: 96px; height: 96px; }
-  .clock-analog .hand.hour { height: 24px; }
-  .clock-analog .hand.minute { height: 32px; }
-  .clock-analog .hand.second { height: 36px; }
+
+  .vinyl-wrap {
+    width: 56px;
+    height: 56px;
+  }
+
+  .track-info h3 {
+    font-size: 0.78rem;
+    -webkit-line-clamp: 2;
+  }
+
+  .track-meta {
+    font-size: 0.65rem;
+  }
+
+  .track-time {
+    font-size: 0.62rem;
+  }
+
+  .music-player {
+    padding: 8px;
+  }
+
+  .progress-wrap {
+    margin: 6px 0;
+  }
+
+  .progress-bar {
+    height: 5px;
+  }
+
+  .player-controls {
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+
+  .widget-modal--music .btn-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .widget-modal--music .btn-play {
+    width: 40px;
+    height: 40px;
+  }
+
+  .volume-row {
+    gap: 6px;
+  }
+
+  .playlist-item {
+    font-size: 0.7rem;
+    padding: 6px 8px;
+  }
+
+  /* Scene */
+  #modalScene {
+    width: min(calc(100vw - 80px), 320px);
+  }
+
+  .scene-controls .bg-label {
+    font-size: 0.68rem;
+    margin-bottom: 8px;
+  }
+
+  /* Clock */
+  #modalClock {
+    width: min(calc(100vw - 80px), 380px);
+  }
+
+  .clock-body {
+    gap: 12px;
+    padding: 0;
+  }
+
+  .clock-analog {
+    width: 80px;
+    height: 80px;
+  }
+
+  .clock-analog .hand.hour { height: 22px; }
+  .clock-analog .hand.minute { height: 30px; }
+  .clock-analog .hand.second { height: 34px; }
+
+  .clock-digital {
+    font-size: 1.5rem;
+  }
+
+  .clock-date {
+    font-size: 0.75rem;
+  }
+
+  /* Pomodoro */
+  .widget-modal--pomo {
+    width: min(calc(100vw - 80px), 340px);
+  }
+
+  .pomo-display {
+    font-size: 1.8rem;
+    margin: 4px 0;
+  }
+
+  .pomo-mode-label {
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+  }
+
+  .pomo-setting-input {
+    font-size: 0.9rem;
+    padding: 6px 8px;
+  }
+
+  .btn {
+    padding: 7px 12px;
+    font-size: 0.8rem;
+  }
+
+  /* Gallery full width landscape */
+  .gallery-panel {
+    width: min(calc(100vw - 16px), 720px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .gallery-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .gallery-search {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+}
+
+/* Màn hình ngang rất thấp (iPhone SE landscape…) */
+@media (max-height: 400px) and (orientation: landscape) {
+  .dock-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .widget-modal {
+    bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - 60px);
+  }
+
+  .widget-modal--music {
+    height: calc(100dvh - 60px);
+    max-height: calc(100dvh - 60px);
+  }
+
+  .vinyl-wrap {
+    width: 48px;
+    height: 48px;
+  }
+
+  .music-layout {
+    gap: 6px;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
 }

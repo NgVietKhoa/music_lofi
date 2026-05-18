@@ -223,8 +223,20 @@ function applyTheme() {
   saveStorage();
 }
 
+/* ========== MOBILE LANDSCAPE ONLY ========== */
+const mobilePortraitMq = window.matchMedia("(max-width: 900px) and (orientation: portrait)");
+
+function isMobilePortrait() {
+  return mobilePortraitMq.matches;
+}
+
+function syncMobileOrientation() {
+  if (isMobilePortrait()) closeAllOverlays();
+}
+
 /* ========== WIDGET MODALS ========== */
 function openWidgetModal(modalId, dockBtn) {
+  if (isMobilePortrait()) return;
   const modal = document.getElementById(modalId);
   if (!modal) return;
 
@@ -391,6 +403,7 @@ function filterGallery(query) {
 }
 
 function openGallery() {
+  if (isMobilePortrait()) return;
   $("#galleryPanel").removeAttribute("hidden");
   $("#galleryBackdrop").classList.add("open");
   $("#galleryPanel").classList.add("open");
@@ -1155,6 +1168,10 @@ async function init() {
   updateRepeatIcon();
   refreshIcons();
   bindEvents();
+
+  syncMobileOrientation();
+  mobilePortraitMq.addEventListener("change", syncMobileOrientation);
+  window.addEventListener("orientationchange", syncMobileOrientation);
 }
 
 init();
