@@ -103,6 +103,10 @@ app.get("/api/youtube/search", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Lofi Chill → http://localhost:${PORT}`);
-});
+export default app;
+
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Lofi Chill → http://localhost:${PORT}`);
+  });
+}
