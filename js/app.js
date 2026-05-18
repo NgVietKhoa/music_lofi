@@ -26,8 +26,6 @@ const state = {
   bgIndex: 0,
   bgLayerA: true,
   theme: "day",
-  volume: 0.7,
-  muted: false,
   playlist: [],
   currentTrack: -1,
   musicShuffle: false,
@@ -91,9 +89,7 @@ function loadStorage() {
     if (typeof data.bgIndex === "number" && data.bgIndex >= 0 && data.bgIndex < getBackgroundCount()) {
       state.bgIndex = data.bgIndex;
     }
-    if (typeof data.volume === "number") state.volume = data.volume;
     if (data.theme === "day" || data.theme === "night") state.theme = data.theme;
-    if (data.muted) state.muted = true;
     if (data.pomo) {
       Object.assign(state.pomo, data.pomo);
       clampPomoState();
@@ -107,9 +103,7 @@ function loadStorage() {
 function saveStorage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     bgIndex: state.bgIndex,
-    volume: state.volume,
     theme: state.theme,
-    muted: state.muted,
     pomo: {
       secondsLeft: state.pomo.secondsLeft,
       running: state.pomo.running,
@@ -438,13 +432,9 @@ function loadYoutubeApi() {
 }
 
 function syncYtVolume() {
-  if (!ytPlayer?.setVolume) return;
-  if (state.muted || state.volume === 0) {
-    ytPlayer.mute();
-  } else {
-    ytPlayer.unMute();
-    ytPlayer.setVolume(Math.round(state.volume * 100));
-  }
+  if (!ytPlayer?.unMute) return;
+  ytPlayer.unMute();
+  if (ytPlayer.setVolume) ytPlayer.setVolume(100);
 }
 
 function stopYtProgressPoll() {
@@ -769,13 +759,6 @@ function setVinylArt(track) {
 function updateVinyl() {
   vinyl.classList.toggle("spinning", state.isPlaying);
   if (vinylWrap) vinylWrap.classList.toggle("is-playing", state.isPlaying);
-}
-
-function applyVolume() {
-  $("#volumeSlider").value = state.volume;
-  setIcon($("#muteBtn"), state.muted || state.volume === 0 ? "volume-x" : "volume-2");
-  syncYtVolume();
-  saveStorage();
 }
 
 function renderPlaylist() {
@@ -1124,16 +1107,6 @@ function bindEvents() {
   });
   document.addEventListener("mouseup", () => { state.isDraggingProgress = false; });
 
-  $("#volumeSlider").addEventListener("input", (e) => {
-    state.volume = parseFloat(e.target.value);
-    state.muted = false;
-    applyVolume();
-  });
-  $("#muteBtn").addEventListener("click", () => {
-    state.muted = !state.muted;
-    applyVolume();
-  });
-
   [pomoDays, pomoHours, pomoMinutes].forEach((input) => {
     input?.addEventListener("change", applyPomoSettings);
     input?.addEventListener("keydown", (e) => {
@@ -1195,7 +1168,7 @@ async function init() {
 
   loadStorage();
   applyTheme();
-  applyVolume();
+  syncYtVolume();
 
   bgStackA.classList.add("active");
   bgStackB.classList.remove("active");

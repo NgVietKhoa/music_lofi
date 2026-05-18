@@ -963,17 +963,6 @@ html, body {
   background: rgba(201, 185, 154, 0.4);
 }
 
-.volume-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.volume-row input[type="range"] {
-  flex: 1;
-  accent-color: var(--warm-mid);
-}
-
 /* Playlist */
 .playlist {
   min-width: 0;
@@ -1590,12 +1579,12 @@ html, body {
     transform: translateX(-50%) translateY(0) scale(1);
   }
 
-  /* Music: giữ 3 cột, thu gọn chiều cao */
+  /* Music: giữ 3 cột, cao hơn để đủ chỗ player + volume */
   .widget-modal--music {
     width: min(calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)), 580px);
     max-width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
-    height: min(62dvh, 272px);
-    max-height: min(62dvh, 272px);
+    height: min(78dvh, calc(100dvh - 54px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+    max-height: min(78dvh, calc(100dvh - 54px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
   }
 
   .widget-modal--music .modal-header {
@@ -1655,15 +1644,22 @@ html, body {
   }
 
   .music-player {
+    display: grid;
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    align-content: start;
+    height: 100%;
     overflow: hidden;
     min-width: 0;
-    padding: 6px;
+    min-height: 0;
+    padding: 6px 8px 8px;
     border-radius: 10px;
+    gap: 0;
   }
 
   .music-col--player .track-info {
     min-width: 0;
     flex: 1;
+    align-self: center;
   }
 
   .yt-result-item {
@@ -1692,6 +1688,10 @@ html, body {
     align-items: center;
     text-align: left;
     gap: 6px;
+    margin-bottom: 0;
+  }
+
+  .music-col--player .music-section-label {
     margin-bottom: 4px;
   }
 
@@ -1714,13 +1714,18 @@ html, body {
     font-size: 0.56rem;
   }
 
-  .progress-wrap {
-    margin: 4px 0;
+  .music-col--player .progress-wrap {
+    margin: 8px 0;
     width: 100%;
   }
 
   .progress-bar {
     height: 4px;
+  }
+
+  .music-col--player .player-controls {
+    margin-top: 0;
+    margin-bottom: 0;
   }
 
   .player-controls {
@@ -1729,7 +1734,7 @@ html, body {
     gap: 4px;
     width: 100%;
     max-width: 100%;
-    margin-bottom: 4px;
+    margin: 0 0 6px;
     padding: 0;
   }
 
@@ -1751,22 +1756,8 @@ html, body {
     height: 34px;
   }
 
-  .volume-row {
-    gap: 4px;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .volume-row .btn-icon {
-    width: 28px;
-    height: 28px;
-    flex-shrink: 0;
-  }
-
-  .volume-row input[type="range"] {
-    flex: 1;
-    min-width: 0;
-    height: 4px;
+  .music-col--player .player-controls {
+    padding-bottom: 4px;
   }
 
   .playlist-item {
@@ -1927,8 +1918,8 @@ html, body {
   }
 
   .widget-modal--music {
-    height: min(54dvh, 220px);
-    max-height: min(54dvh, 220px);
+    height: min(72dvh, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+    max-height: min(72dvh, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
     width: min(calc(100vw - 12px), 520px);
   }
 
@@ -1946,9 +1937,21 @@ html, body {
   }
 
   .music-col--search,
-  .music-col--playlist,
-  .music-player {
+  .music-col--playlist {
     padding: 4px;
+  }
+
+  .music-player {
+    padding: 4px 6px 6px;
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  }
+
+  .music-col--player .progress-wrap {
+    margin: 6px 0;
+  }
+
+  .player-controls {
+    margin-bottom: 4px;
   }
 
   .widget-modal--music .player-controls .btn-icon {
