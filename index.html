@@ -68,7 +68,7 @@
       </div>
       <p class="bg-label" id="bgLabel">bg 1 / 102</p>
       <button type="button" class="btn btn-with-icon btn-block" id="galleryOpen">
-        <i data-lucide="images"></i><span>Mở Gallery</span>
+        <i data-lucide="images"></i><span>Chọn nền</span>
       </button>
     </div>
   </section>
@@ -162,18 +162,22 @@
       <h2 class="panel-title"><i data-lucide="timer"></i> Pomodoro</h2>
       <button type="button" class="btn btn-icon modal-close" aria-label="Đóng"><i data-lucide="x"></i></button>
     </header>
-    <div class="pomo-settings">
+    <p class="pomo-settings-title">Thời gian làm việc</p>
+    <div class="pomo-settings pomo-settings--dhms">
       <label class="pomo-setting">
-        <span class="pomo-setting-label">Làm việc (phút)</span>
-        <input type="number" id="pomoWorkMin" class="pomo-setting-input" min="1" max="180" value="25" inputmode="numeric" />
+        <span class="pomo-setting-label">Ngày</span>
+        <input type="number" id="pomoDays" class="pomo-setting-input" min="0" max="99" value="0" inputmode="numeric" />
       </label>
       <label class="pomo-setting">
-        <span class="pomo-setting-label">Nghỉ (phút)</span>
-        <input type="number" id="pomoBreakMin" class="pomo-setting-input" min="1" max="120" value="5" inputmode="numeric" />
+        <span class="pomo-setting-label">Giờ</span>
+        <input type="number" id="pomoHours" class="pomo-setting-input" min="0" max="23" value="0" inputmode="numeric" />
+      </label>
+      <label class="pomo-setting">
+        <span class="pomo-setting-label">Phút</span>
+        <input type="number" id="pomoMinutes" class="pomo-setting-input" min="0" max="59" value="25" inputmode="numeric" />
       </label>
     </div>
-    <div class="pomo-mode-label" id="pomoModeLabel">Làm việc</div>
-    <div class="pomo-display" id="pomoDisplay">25:00</div>
+    <div class="pomo-display" id="pomoDisplay">00:25:00</div>
     <div class="pomo-controls">
       <button type="button" class="btn" id="pomoStart">Start</button>
       <button type="button" class="btn" id="pomoPause">Pause</button>
@@ -181,15 +185,47 @@
     </div>
   </section>
 
-  <!-- ========== GALLERY (layer trên widget) ========== -->
+  <!-- ========== GALLERY — wallpaper picker ========== -->
   <div class="gallery-backdrop" id="galleryBackdrop"></div>
-  <section class="gallery-panel glass" id="galleryPanel" role="dialog" aria-label="GIF Gallery" hidden>
-    <header class="gallery-header">
-      <h2 class="panel-title"><i data-lucide="images"></i> GIF Gallery</h2>
-      <input type="text" class="gallery-search" id="gallerySearch" placeholder="Tìm #..." />
-      <button type="button" class="btn btn-icon" id="galleryClose" aria-label="Đóng"><i data-lucide="x"></i></button>
+  <section class="gallery-panel" id="galleryPanel" role="dialog" aria-label="Chọn nền" hidden>
+    <header class="gallery-top">
+      <button type="button" class="gallery-icon-btn" id="galleryClose" aria-label="Đóng">
+        <i data-lucide="x"></i>
+      </button>
+      <h2 class="gallery-top-title">Chọn nền</h2>
+      <div class="gallery-jump">
+        <label class="gallery-jump-label" for="gallerySearch">#</label>
+        <input type="text" class="gallery-jump-input" id="gallerySearch" placeholder="Số" inputmode="numeric" autocomplete="off" />
+        <button type="button" class="gallery-jump-go" id="galleryJumpBtn">Đi</button>
+      </div>
     </header>
-    <div class="gallery-grid" id="galleryGrid"></div>
+
+    <div class="gallery-stage" id="galleryStage">
+      <button type="button" class="gallery-nav gallery-nav--prev" id="galleryPrev" aria-label="Ảnh trước">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <div class="gallery-viewport" id="galleryViewport">
+        <img class="gallery-fill" id="galleryPreviewFill" alt="" aria-hidden="true" />
+        <img class="gallery-frame" id="galleryPreviewImg" alt="" />
+      </div>
+      <button type="button" class="gallery-nav gallery-nav--next" id="galleryNext" aria-label="Ảnh sau">
+        <i data-lucide="chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="gallery-progress" aria-hidden="true">
+      <div class="gallery-progress-fill" id="galleryProgressFill"></div>
+    </div>
+
+    <footer class="gallery-footer">
+      <span class="gallery-counter" id="galleryPreviewMeta">1 / 102</span>
+      <button type="button" class="gallery-btn gallery-btn--ghost" id="galleryRandom">
+        <i data-lucide="shuffle"></i><span>Ngẫu nhiên</span>
+      </button>
+      <button type="button" class="gallery-btn gallery-btn--primary" id="galleryApply">
+        <i data-lucide="check"></i><span>Chọn nền</span>
+      </button>
+    </footer>
   </section>
 
   <script src="node_modules/lucide/dist/umd/lucide.min.js"></script>

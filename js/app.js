@@ -35,11 +35,9 @@ const state = {
   isPlaying: false,
   isDraggingProgress: false,
   pomo: {
-    mode: "work", // work | break
     secondsLeft: 25 * 60,
     running: false,
-    workDuration: 25 * 60,
-    breakDuration: 5 * 60
+    workDuration: 25 * 60
   }
 };
 
@@ -58,6 +56,7 @@ const vinylArt = $("#vinylArt");
 let ytPlayer = null;
 let ytApiReady = null;
 let ytProgressTimer = null;
+let ytPendingAutoplay = false;
 const trackTitle = $("#trackTitle");
 const trackMeta = $("#trackMeta");
 const timeCurrent = $("#timeCurrent");
@@ -65,8 +64,6 @@ const timeTotal = $("#timeTotal");
 const progressFill = $("#progressFill");
 const progressWrap = $("#progressWrap");
 const playlistEl = $("#playlist");
-const galleryGrid = $("#galleryGrid");
-const gallerySearch = $("#gallerySearch");
 const ytSearchInput = $("#ytSearchInput");
 const ytSearchBtn = $("#ytSearchBtn");
 const ytSearchResults = $("#ytSearchResults");
@@ -81,8 +78,6 @@ const ytSearchState = {
   loadingMore: false
 };
 
-let galleryObserver = null;
-let galleryBuildToken = 0;
 let activeWidgetModal = null;
 let bgTransitionToken = 0;
 const modalBackdrop = $("#modalBackdrop");
@@ -116,11 +111,9 @@ function saveStorage() {
     theme: state.theme,
     muted: state.muted,
     pomo: {
-      mode: state.pomo.mode,
       secondsLeft: state.pomo.secondsLeft,
       running: state.pomo.running,
-      workDuration: state.pomo.workDuration,
-      breakDuration: state.pomo.breakDuration
+      workDuration: state.pomo.workDuration
     },
     playlist: state.playlist.map((t) => ({
       videoId: t.videoId,
@@ -142,9 +135,6 @@ function thumbPath(index) {
 
 function updateBgLabel() {
   bgLabel.textContent = `bg ${state.bgIndex + 1} / ${getBackgroundCount()}`;
-  document.querySelectorAll(".gallery-thumb").forEach((el, i) => {
-    el.classList.toggle("active", i === state.bgIndex);
-  });
 }
 
 function clearBgInlineStyles(img) {
@@ -288,130 +278,104 @@ function toggleTheme() {
   applyTheme();
 }
 
-/* ========== GALLERY (lazy-load, chunked build) ========== */
-function destroyGallery() {
-  galleryBuildToken += 1;
-  if (galleryObserver) {
-    galleryObserver.disconnect();
-    galleryObserver = null;
+/* ========== GALLERY — wallpaper picker ========== */
+const galleryStage = $("#galleryStage");
+const gallerySearch = $("#gallerySearch");
+const galleryPreviewImg = $("#galleryPreviewImg");
+const galleryPreviewFill = $("#galleryPreviewFill");
+const galleryPreviewMeta = $("#galleryPreviewMeta");
+const galleryProgressFill = $("#galleryProgressFill");
+const galleryApply = $("#galleryApply");
+const galleryPrev = $("#galleryPrev");
+const galleryNext = $("#galleryNext");
+const galleryRandom = $("#galleryRandom");
+const galleryJumpBtn = $("#galleryJumpBtn");
+let galleryPickIndex = -1;
+let gallerySwipeX = 0;
+
+function updateGalleryPreview(index) {
+  const count = getBackgroundCount();
+  index = ((index % count) + count) % count;
+  galleryPickIndex = index;
+
+  const src = bgPath(index);
+  if (galleryPreviewImg) {
+    galleryPreviewImg.classList.add("is-switching");
+    galleryPreviewImg.onload = () => galleryPreviewImg.classList.remove("is-switching");
+    galleryPreviewImg.onerror = () => galleryPreviewImg.classList.remove("is-switching");
+    galleryPreviewImg.src = src;
+    galleryPreviewImg.alt = `Background ${index + 1}`;
   }
-  galleryGrid.innerHTML = "";
+  if (galleryPreviewFill) galleryPreviewFill.src = src;
+  if (galleryPreviewMeta) {
+    galleryPreviewMeta.textContent = `${index + 1} / ${count}`;
+  }
+  if (galleryProgressFill) {
+    galleryProgressFill.style.width = `${((index + 1) / count) * 100}%`;
+  }
 }
 
-function loadThumbImage(thumb) {
-  if (thumb.dataset.loaded === "1") return;
-  const src = thumb.dataset.src;
-  if (!src) return;
-
-  let img = thumb.querySelector("img");
-  if (!img) {
-    img = document.createElement("img");
-    img.alt = `Background ${Number(thumb.dataset.index) + 1}`;
-    img.decoding = "async";
-    const placeholder = thumb.querySelector(".gallery-thumb-placeholder");
-    thumb.insertBefore(img, placeholder.nextSibling);
-    img.addEventListener("load", () => thumb.classList.add("loaded"), { once: true });
-  }
-  if (img.getAttribute("src") !== src) {
-    thumb.classList.remove("loaded");
-    img.src = src;
-  } else if (img.complete && img.naturalWidth > 0) {
-    thumb.classList.add("loaded");
-  }
-  thumb.dataset.loaded = "1";
+function galleryStep(delta) {
+  if (!delta) return;
+  updateGalleryPreview(galleryPickIndex + delta);
 }
 
-function unloadThumbImage(thumb) {
-  const img = thumb.querySelector("img");
-  if (!img) return;
-  img.removeAttribute("src");
-  thumb.classList.remove("loaded");
-  thumb.dataset.loaded = "0";
+function galleryJumpFromInput() {
+  const raw = gallerySearch.value.trim().replace("#", "");
+  const num = parseInt(raw, 10);
+  if (!Number.isFinite(num) || num < 1) return;
+  updateGalleryPreview(num - 1);
 }
 
-function setupGalleryObserver() {
-  if (galleryObserver) galleryObserver.disconnect();
+function galleryPickRandom() {
+  const count = getBackgroundCount();
+  if (count <= 1) return;
+  let next;
+  do {
+    next = Math.floor(Math.random() * count);
+  } while (next === galleryPickIndex);
+  updateGalleryPreview(next);
+}
 
-  galleryObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) loadThumbImage(entry.target);
-        else unloadThumbImage(entry.target);
-      });
+function applyGalleryPick() {
+  if (galleryPickIndex < 0) return;
+  setBackground(galleryPickIndex);
+  closeGallery();
+}
+
+function onGalleryKeydown(e) {
+  const panel = $("#galleryPanel");
+  if (!panel?.classList.contains("open")) return;
+  if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    galleryStep(-1);
+  } else if (e.key === "ArrowRight") {
+    e.preventDefault();
+    galleryStep(1);
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    applyGalleryPick();
+  }
+}
+
+function bindGallerySwipe() {
+  if (!galleryStage) return;
+  galleryStage.addEventListener(
+    "touchstart",
+    (e) => {
+      gallerySwipeX = e.touches[0]?.clientX ?? 0;
     },
-    { root: galleryGrid, rootMargin: "80px", threshold: 0.05 }
+    { passive: true }
   );
-
-  galleryGrid.querySelectorAll(".gallery-thumb:not(.gallery-thumb--hidden)").forEach((el) => {
-    galleryObserver.observe(el);
-  });
-}
-
-function createGalleryThumb(i) {
-  const div = document.createElement("div");
-  div.className = "gallery-thumb" + (i === state.bgIndex ? " active" : "");
-  div.dataset.index = String(i);
-  div.dataset.src = thumbPath(i);
-  div.dataset.loaded = "0";
-  div.innerHTML = '<div class="gallery-thumb-placeholder" aria-hidden="true"></div><span>' + (i + 1) + '</span>';
-  div.addEventListener("click", () => {
-    setBackground(i);
-    closeGallery();
-  });
-  div.addEventListener("mouseenter", () => loadThumbImage(div), { passive: true });
-  return div;
-}
-
-function buildGallery() {
-  destroyGallery();
-  const token = galleryBuildToken;
-  const total = getBackgroundCount();
-  const CHUNK = 20;
-  let index = 0;
-
-  function appendChunk() {
-    if (token !== galleryBuildToken) return;
-
-    const fragment = document.createDocumentFragment();
-    const end = Math.min(index + CHUNK, total);
-
-    for (let i = index; i < end; i++) {
-      fragment.appendChild(createGalleryThumb(i));
-    }
-    galleryGrid.appendChild(fragment);
-    index = end;
-
-    if (index < total) {
-      requestAnimationFrame(appendChunk);
-    } else {
-      setupGalleryObserver();
-      const active = galleryGrid.querySelector(`.gallery-thumb[data-index="${state.bgIndex}"]`);
-      if (active) loadThumbImage(active);
-    }
-  }
-
-  requestAnimationFrame(appendChunk);
-}
-
-function filterGallery(query) {
-  const q = query.trim().toLowerCase().replace("#", "");
-  const thumbs = galleryGrid.querySelectorAll(".gallery-thumb");
-
-  thumbs.forEach((el) => {
-    const num = String(parseInt(el.dataset.index, 10) + 1);
-    const show = !q || num.includes(q);
-    el.classList.toggle("gallery-thumb--hidden", !show);
-    if (!show) unloadThumbImage(el);
-  });
-
-  if (galleryObserver) {
-    galleryObserver.disconnect();
-    thumbs.forEach((el) => {
-      if (!el.classList.contains("gallery-thumb--hidden")) {
-        galleryObserver.observe(el);
-      }
-    });
-  }
+  galleryStage.addEventListener(
+    "touchend",
+    (e) => {
+      const dx = e.changedTouches[0].clientX - gallerySwipeX;
+      if (Math.abs(dx) < 48) return;
+      galleryStep(dx < 0 ? 1 : -1);
+    },
+    { passive: true }
+  );
 }
 
 function openGallery() {
@@ -420,15 +384,16 @@ function openGallery() {
   $("#galleryBackdrop").classList.add("open");
   $("#galleryPanel").classList.add("open");
   gallerySearch.value = "";
-  buildGallery();
+  updateGalleryPreview(state.bgIndex);
+  refreshIcons();
 }
 
 function closeGallery() {
   $("#galleryBackdrop").classList.remove("open");
   $("#galleryPanel").classList.remove("open");
   $("#galleryPanel").setAttribute("hidden", "");
-  destroyGallery();
 }
+
 
 /* ========== CLOCK ========== */
 function pad(n) { return String(n).padStart(2, "0"); }
@@ -531,6 +496,16 @@ function onYtStateChange(event) {
       updateVinyl();
       setIcon($("#musicPlay"), "play");
     }
+  } else if (
+    ytPendingAutoplay &&
+    (st === YT.PlayerState.CUED || st === YT.PlayerState.UNSTARTED)
+  ) {
+    ytPendingAutoplay = false;
+    try {
+      ytPlayer.playVideo();
+    } catch {
+      /* mobile có thể chặn — user bấm play thủ công */
+    }
   }
 }
 
@@ -544,7 +519,13 @@ function escapeHtml(str) {
 
 function addYouTubeTrack(item) {
   if (!item?.id) return;
-  if (state.playlist.some((t) => t.videoId === item.id)) return;
+
+  const existingIndex = state.playlist.findIndex((t) => t.videoId === item.id);
+  if (existingIndex >= 0) {
+    playTrack(existingIndex);
+    return;
+  }
+
   state.playlist.push({
     videoId: item.id,
     name: item.title || "YouTube",
@@ -553,7 +534,7 @@ function addYouTubeTrack(item) {
   });
   saveStorage();
   renderPlaylist();
-  if (state.currentTrack < 0) playTrack(state.playlist.length - 1);
+  playTrack(state.playlist.length - 1);
 }
 
 async function searchYouTube(query, continuation) {
@@ -846,6 +827,7 @@ function setTrackDisplay(title, meta, isError) {
 
 async function loadTrack(index, autoplay) {
   if (index < 0 || index >= state.playlist.length) return;
+  ytPendingAutoplay = !!autoplay;
   state.currentTrack = index;
   const track = state.playlist[index];
   setTrackDisplay("Đang tải...", track.author, false);
@@ -880,7 +862,10 @@ async function loadTrack(index, autoplay) {
             syncYtVolume();
             const dur = e.target.getDuration();
             if (dur) timeTotal.textContent = formatTime(dur);
-            if (autoplay) e.target.playVideo();
+            if (autoplay) {
+              ytPendingAutoplay = false;
+              e.target.playVideo();
+            }
           },
           onStateChange: onYtStateChange,
           onError: (e) => {
@@ -891,7 +876,15 @@ async function loadTrack(index, autoplay) {
     } else {
       ytPlayer.loadVideoById({ videoId: track.videoId, startSeconds: 0 });
       syncYtVolume();
-      if (autoplay) ytPlayer.playVideo();
+      if (autoplay) {
+        try {
+          ytPlayer.playVideo();
+        } catch {
+          /* chờ onStateChange CUED */
+        }
+      } else {
+        ytPendingAutoplay = false;
+      }
     }
   };
 
@@ -961,62 +954,95 @@ function seekFromEvent(e) {
 }
 
 /* ========== POMODORO ========== */
-const pomoWorkMin = $("#pomoWorkMin");
-const pomoBreakMin = $("#pomoBreakMin");
+const POMO_MAX_SECONDS = 99 * 86400 + 23 * 3600 + 59 * 60;
+const pomoDays = $("#pomoDays");
+const pomoHours = $("#pomoHours");
+const pomoMinutes = $("#pomoMinutes");
 
-function pomoMinutesToSeconds(value, maxMin) {
+function pomoClampInt(value, min, max) {
   const n = parseInt(value, 10);
-  if (!Number.isFinite(n)) return 60;
-  return Math.max(1, Math.min(maxMin, n)) * 60;
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+
+function splitSecondsToDHM(total) {
+  const sec = Math.max(0, Math.floor(total));
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return { d, h, m };
+}
+
+function dhmToSeconds(d, h, m) {
+  return d * 86400 + h * 3600 + m * 60;
+}
+
+function migratePomoState() {
+  delete state.pomo.breakDuration;
+  delete state.pomo.mode;
 }
 
 function clampPomoState() {
-  state.pomo.workDuration = Math.max(60, Math.min(180 * 60, state.pomo.workDuration || 25 * 60));
-  state.pomo.breakDuration = Math.max(60, Math.min(120 * 60, state.pomo.breakDuration || 5 * 60));
-  if (state.pomo.mode !== "work" && state.pomo.mode !== "break") state.pomo.mode = "work";
+  migratePomoState();
+  state.pomo.workDuration = Math.max(60, Math.min(POMO_MAX_SECONDS, state.pomo.workDuration || 25 * 60));
+  if (!state.pomo.running) {
+    state.pomo.secondsLeft = Math.min(state.pomo.secondsLeft, state.pomo.workDuration);
+  }
+  state.pomo.secondsLeft = Math.max(0, state.pomo.secondsLeft || 0);
 }
 
 function syncPomoInputsFromState() {
-  if (!pomoWorkMin || !pomoBreakMin) return;
-  pomoWorkMin.value = Math.round(state.pomo.workDuration / 60);
-  pomoBreakMin.value = Math.round(state.pomo.breakDuration / 60);
+  if (!pomoDays || !pomoHours || !pomoMinutes) return;
+  const { d, h, m } = splitSecondsToDHM(state.pomo.workDuration);
+  pomoDays.value = d;
+  pomoHours.value = h;
+  pomoMinutes.value = m;
 }
 
 function setPomoInputsDisabled(disabled) {
-  if (pomoWorkMin) pomoWorkMin.disabled = disabled;
-  if (pomoBreakMin) pomoBreakMin.disabled = disabled;
+  if (pomoDays) pomoDays.disabled = disabled;
+  if (pomoHours) pomoHours.disabled = disabled;
+  if (pomoMinutes) pomoMinutes.disabled = disabled;
+}
+
+function readPomoDurationFromInputs() {
+  if (!pomoDays || !pomoHours || !pomoMinutes) return state.pomo.workDuration;
+  const d = pomoClampInt(pomoDays.value, 0, 99);
+  const h = pomoClampInt(pomoHours.value, 0, 23);
+  const m = pomoClampInt(pomoMinutes.value, 0, 59);
+  let total = dhmToSeconds(d, h, m);
+  if (total < 60) total = 25 * 60;
+  return Math.min(POMO_MAX_SECONDS, total);
 }
 
 function applyPomoSettings() {
-  if (!pomoWorkMin || !pomoBreakMin) return;
-  state.pomo.workDuration = pomoMinutesToSeconds(pomoWorkMin.value, 180);
-  state.pomo.breakDuration = pomoMinutesToSeconds(pomoBreakMin.value, 120);
+  if (!pomoDays || !pomoHours || !pomoMinutes) return;
+  state.pomo.workDuration = readPomoDurationFromInputs();
   syncPomoInputsFromState();
   if (!state.pomo.running) {
-    state.pomo.secondsLeft = state.pomo.mode === "work"
-      ? state.pomo.workDuration
-      : state.pomo.breakDuration;
+    state.pomo.secondsLeft = state.pomo.workDuration;
     updatePomoDisplay();
   }
   saveStorage();
 }
 
-function pomoLabel() {
-  return state.pomo.mode === "work" ? "Làm việc" : "Nghỉ ngơi";
+function formatPomoCountdown(sec) {
+  const total = Math.max(0, Math.floor(sec));
+  const { d, h, m } = splitSecondsToDHM(total);
+  const s = total % 60;
+  if (d > 0) return `${d}d ${pad(h)}:${pad(m)}:${pad(s)}`;
+  if (h > 0) return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `${pad(m)}:${pad(s)}`;
 }
 
 function updatePomoDisplay() {
-  const m = Math.floor(state.pomo.secondsLeft / 60);
-  const s = state.pomo.secondsLeft % 60;
-  $("#pomoDisplay").textContent = `${pad(m)}:${pad(s)}`;
-  $("#pomoModeLabel").textContent = pomoLabel();
+  const el = $("#pomoDisplay");
+  if (el) el.textContent = formatPomoCountdown(state.pomo.secondsLeft);
 }
 
 function pomoReset() {
   state.pomo.running = false;
-  state.pomo.secondsLeft = state.pomo.mode === "work"
-    ? state.pomo.workDuration
-    : state.pomo.breakDuration;
+  state.pomo.secondsLeft = state.pomo.workDuration;
   updatePomoDisplay();
   saveStorage();
 }
@@ -1024,10 +1050,9 @@ function pomoReset() {
 function pomoTick() {
   if (!state.pomo.running) return;
   if (state.pomo.secondsLeft <= 0) {
-    state.pomo.mode = state.pomo.mode === "work" ? "break" : "work";
-    state.pomo.secondsLeft = state.pomo.mode === "work"
-      ? state.pomo.workDuration
-      : state.pomo.breakDuration;
+    state.pomo.running = false;
+    state.pomo.secondsLeft = 0;
+    setPomoInputsDisabled(false);
   } else {
     state.pomo.secondsLeft--;
   }
@@ -1052,7 +1077,19 @@ function bindEvents() {
   $("#galleryOpen").addEventListener("click", openGallery);
   $("#galleryClose").addEventListener("click", closeGallery);
   $("#galleryBackdrop").addEventListener("click", closeGallery);
-  gallerySearch.addEventListener("input", (e) => filterGallery(e.target.value));
+  galleryApply?.addEventListener("click", applyGalleryPick);
+  galleryPrev?.addEventListener("click", () => galleryStep(-1));
+  galleryNext?.addEventListener("click", () => galleryStep(1));
+  galleryRandom?.addEventListener("click", galleryPickRandom);
+  galleryJumpBtn?.addEventListener("click", galleryJumpFromInput);
+  gallerySearch?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      galleryJumpFromInput();
+    }
+  });
+  document.addEventListener("keydown", onGalleryKeydown);
+  bindGallerySwipe();
 
   ytSearchBtn.addEventListener("click", runYouTubeSearch);
   getSearchResultsBody().addEventListener("scroll", onYouTubeResultsScroll, { passive: true });
@@ -1097,13 +1134,11 @@ function bindEvents() {
     applyVolume();
   });
 
-  pomoWorkMin?.addEventListener("change", applyPomoSettings);
-  pomoBreakMin?.addEventListener("change", applyPomoSettings);
-  pomoWorkMin?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") applyPomoSettings();
-  });
-  pomoBreakMin?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") applyPomoSettings();
+  [pomoDays, pomoHours, pomoMinutes].forEach((input) => {
+    input?.addEventListener("change", applyPomoSettings);
+    input?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") applyPomoSettings();
+    });
   });
 
   $("#pomoStart").addEventListener("click", () => {
