@@ -1,0 +1,23 @@
+{
+  "name": "music_chill",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.mjs",
+    "sync:cloudinary": "node scripts/fetch-cloudinary-ids.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "lucide": "^1.16.0",
+    "youtubei.js": "^17.0.1"
+  },
+  "devDependencies": {
+    "cloudinary": "^2.10.0"
+  }
+}
