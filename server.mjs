@@ -8,12 +8,17 @@ import { Innertube, Log } from "youtubei.js";
 Log.setLevel(Log.Level.NONE);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = process.env.VERCEL ? process.cwd() : __dirname;
 const PORT = Number(process.env.PORT) || 8080;
 const SESSION_TTL_MS = 10 * 60 * 1000;
 
 const app = express();
 app.use(cors());
-app.use(express.static(__dirname));
+app.use(express.static(ROOT));
+
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(ROOT, "index.html"));
+});
 
 let innertubePromise = null;
 const searchSessions = new Map();
@@ -49,7 +54,7 @@ function pruneSearchSessions() {
 setInterval(pruneSearchSessions, 60_000);
 
 app.get("/favicon.ico", (_req, res) => {
-  res.sendFile(path.join(__dirname, "assets", "logo.png"));
+  res.sendFile(path.join(ROOT, "assets", "logo.png"));
 });
 
 app.get("/api/health", (_req, res) => {
