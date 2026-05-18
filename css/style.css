@@ -50,6 +50,7 @@ html, body {
 .bg-stack {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   opacity: 0;
   transition: opacity 0.85s ease;
   pointer-events: none;
@@ -59,14 +60,33 @@ html, body {
   opacity: 1;
 }
 
-/* Phủ kín màn hình — không viền hai bên / trên dưới */
 .bg-img {
   position: absolute;
+  object-position: center;
+}
+
+/* Lớp nền blur phía sau (lấp khoảng trống trên/dưới nếu có) */
+.bg-img--fill {
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  transform: scale(1.08);
+  filter: blur(20px) saturate(1.1) brightness(0.72);
+  z-index: 0;
+}
+
+/* Cao full màn hình; min-width full → kéo giãn ngang (vw/dvh ổn định hơn % trên mobile) */
+.bg-img--main {
+  top: 50%;
+  left: 50%;
+  height: 100dvh;
+  width: auto;
+  min-width: 100dvw;
+  max-height: 100dvh;
+  max-width: none;
+  z-index: 1;
+  transform: translate(-50%, -50%);
 }
 
 .bg-overlay {
@@ -1315,63 +1335,90 @@ html, body {
   }
 
   .glass {
-    padding: 10px 12px;
-    border-radius: 14px;
+    padding: 8px 10px;
+    border-radius: 12px;
   }
 
   .modal-header {
-    margin-bottom: 8px;
-    gap: 8px;
+    margin-bottom: 6px;
+    gap: 6px;
   }
 
   .modal-header .panel-title {
-    font-size: 0.95rem;
+    font-size: 0.82rem;
+    gap: 5px;
+  }
+
+  .modal-header .btn-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .modal-header .btn-icon svg {
+    width: 16px;
+    height: 16px;
   }
 
   .widget-modal {
-    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(50px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     right: auto;
-    width: min(calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)), 920px);
-    max-height: calc(100dvh - 68px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    width: auto;
+    max-width: min(calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)), 320px);
+    max-height: min(58dvh, 260px);
     overflow: hidden;
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
 
   .widget-modal.open {
     transform: translateX(-50%) translateY(0) scale(1);
   }
 
-  /* Music: giữ 3 cột ngang */
+  /* Music: giữ 3 cột, thu gọn chiều cao */
   .widget-modal--music {
-    width: min(calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)), 920px);
-    height: calc(100dvh - 68px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    max-height: calc(100dvh - 68px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    width: min(calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)), 580px);
+    max-width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+    height: min(62dvh, 272px);
+    max-height: min(62dvh, 272px);
+  }
+
+  .widget-modal--music .modal-header {
+    margin-bottom: 4px;
   }
 
   .music-layout {
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr) minmax(0, 0.8fr);
-    gap: 8px;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 0.72fr);
+    gap: 6px;
     min-height: 0;
   }
 
   .music-col--search,
   .music-col--playlist {
-    padding: 8px;
+    padding: 6px;
+    border-radius: 10px;
   }
 
   .music-section-label {
-    font-size: 0.58rem;
-    margin-bottom: 4px;
+    font-size: 0.52rem;
+    margin-bottom: 3px;
+    letter-spacing: 0.06em;
+  }
+
+  .yt-search-row {
+    gap: 5px;
   }
 
   .yt-search-input {
-    font-size: 0.75rem;
-    padding: 7px 9px;
+    font-size: 0.68rem;
+    padding: 5px 7px;
+    border-radius: 8px;
   }
 
   .yt-search-btn {
-    width: 36px;
+    width: 30px;
+    min-height: 30px;
+    border-radius: 8px;
   }
 
   .yt-search-results {
@@ -1390,198 +1437,321 @@ html, body {
   }
 
   .yt-result-item {
-    padding: 6px 7px;
-    gap: 7px;
+    padding: 4px 5px;
+    gap: 5px;
+    border-radius: 8px;
   }
 
   .yt-result-thumb {
-    width: 44px;
-    height: 33px;
+    width: 36px;
+    height: 27px;
+    border-radius: 4px;
   }
 
   .yt-result-title {
-    font-size: 0.72rem;
+    font-size: 0.65rem;
     -webkit-line-clamp: 2;
   }
 
   .yt-result-sub {
-    font-size: 0.58rem;
+    font-size: 0.54rem;
   }
 
   .music-col--player .player-header {
     flex-direction: row;
     align-items: center;
     text-align: left;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .vinyl-wrap {
-    width: 56px;
-    height: 56px;
-  }
-
-  .track-info h3 {
-    font-size: 0.78rem;
-    -webkit-line-clamp: 2;
-  }
-
-  .track-meta {
-    font-size: 0.65rem;
-  }
-
-  .track-time {
-    font-size: 0.62rem;
-  }
-
-  .music-player {
-    padding: 8px;
-  }
-
-  .progress-wrap {
-    margin: 6px 0;
-  }
-
-  .progress-bar {
-    height: 5px;
-  }
-
-  .player-controls {
-    gap: 2px;
+    gap: 6px;
     margin-bottom: 4px;
   }
 
+  .vinyl-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .track-info h3 {
+    font-size: 0.7rem;
+    -webkit-line-clamp: 2;
+    margin-bottom: 1px;
+  }
+
+  .track-meta {
+    font-size: 0.58rem;
+  }
+
+  .track-time {
+    font-size: 0.56rem;
+  }
+
+  .music-player {
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  .progress-wrap {
+    margin: 4px 0;
+  }
+
+  .progress-bar {
+    height: 4px;
+  }
+
+  .player-controls {
+    gap: 0;
+    margin-bottom: 2px;
+  }
+
   .widget-modal--music .btn-icon {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .widget-modal--music .btn-icon svg {
+    width: 14px;
+    height: 14px;
   }
 
   .widget-modal--music .btn-play {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
   }
 
   .volume-row {
-    gap: 6px;
+    gap: 4px;
+  }
+
+  .volume-row input[type="range"] {
+    height: 4px;
   }
 
   .playlist-item {
-    font-size: 0.7rem;
-    padding: 6px 8px;
+    font-size: 0.62rem;
+    padding: 4px 6px;
+    border-radius: 6px;
+  }
+
+  .playlist-empty {
+    font-size: 0.62rem;
+    padding: 4px;
   }
 
   /* Scene */
   #modalScene {
-    width: min(calc(100vw - 80px), 320px);
+    width: min(56vw, 200px);
+    max-height: none;
+  }
+
+  .scene-nav {
+    margin-bottom: 6px;
+  }
+
+  .scene-nav .btn-icon {
+    width: 32px;
+    height: 32px;
   }
 
   .scene-controls .bg-label {
-    font-size: 0.68rem;
-    margin-bottom: 8px;
+    font-size: 0.62rem;
+    margin-bottom: 6px;
+  }
+
+  .scene-controls .btn-block {
+    font-size: 0.85rem;
+    padding: 5px 10px;
   }
 
   /* Clock */
   #modalClock {
-    width: min(calc(100vw - 80px), 380px);
+    width: min(68vw, 260px);
+    max-height: none;
   }
 
   .clock-body {
-    gap: 12px;
+    gap: 10px;
     padding: 0;
   }
 
   .clock-analog {
-    width: 80px;
-    height: 80px;
+    width: 64px;
+    height: 64px;
   }
 
-  .clock-analog .hand.hour { height: 22px; }
-  .clock-analog .hand.minute { height: 30px; }
-  .clock-analog .hand.second { height: 34px; }
+  .clock-analog .hand.hour { height: 18px; }
+  .clock-analog .hand.minute { height: 24px; }
+  .clock-analog .hand.second { height: 28px; }
 
   .clock-digital {
-    font-size: 1.5rem;
+    font-size: 1.15rem;
   }
 
   .clock-date {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
   }
 
   /* Pomodoro */
   .widget-modal--pomo {
-    width: min(calc(100vw - 80px), 340px);
+    width: min(52vw, 220px);
+    max-height: none;
   }
 
-  .pomo-display {
-    font-size: 1.8rem;
-    margin: 4px 0;
-  }
-
-  .pomo-mode-label {
-    font-size: 0.82rem;
+  .pomo-settings {
+    gap: 6px;
     margin-bottom: 8px;
   }
 
+  .pomo-setting-label {
+    font-size: 0.56rem;
+  }
+
+  .pomo-display {
+    font-size: 1.45rem;
+    margin: 2px 0;
+  }
+
+  .pomo-mode-label {
+    font-size: 0.72rem;
+    margin-bottom: 6px;
+  }
+
   .pomo-setting-input {
-    font-size: 0.9rem;
-    padding: 6px 8px;
+    font-size: 0.78rem;
+    padding: 4px 6px;
+    border-radius: 8px;
+  }
+
+  .pomo-controls {
+    gap: 5px;
+  }
+
+  .pomo-controls .btn {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+    border-radius: 8px;
   }
 
   .btn {
-    padding: 7px 12px;
-    font-size: 0.8rem;
+    padding: 5px 10px;
+    font-size: 0.72rem;
+    border-radius: 8px;
   }
 
-  /* Gallery full width landscape */
+  /* Gallery */
   .gallery-panel {
-    width: min(calc(100vw - 16px), 720px);
-    max-height: calc(100dvh - 24px);
+    width: min(calc(100vw - 20px), 480px);
+    max-height: min(56dvh, 240px);
   }
 
   .gallery-grid {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-    padding: 8px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    padding: 6px;
   }
 
   .gallery-header {
-    padding: 10px 12px;
-    gap: 8px;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .gallery-header h2 {
+    font-size: 0.95rem;
   }
 
   .gallery-search {
-    font-size: 0.8rem;
-    padding: 6px 10px;
+    font-size: 0.72rem;
+    padding: 4px 8px;
+    border-radius: 8px;
+  }
+
+  .gallery-header .btn-icon {
+    width: 30px;
+    height: 30px;
   }
 }
 
 /* Màn hình ngang rất thấp (iPhone SE landscape…) */
 @media (max-height: 400px) and (orientation: landscape) {
+  .dock {
+    padding: 4px 8px;
+  }
+
   .dock-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .dock-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .widget-modal {
+    bottom: calc(44px + env(safe-area-inset-bottom, 0px));
+    padding: 6px 8px;
+    max-height: min(54dvh, 220px);
+  }
+
+  .widget-modal--music {
+    height: min(54dvh, 220px);
+    max-height: min(54dvh, 220px);
+    width: min(calc(100vw - 12px), 520px);
+  }
+
+  .music-section-label {
+    display: none;
+  }
+
+  .vinyl-wrap {
     width: 38px;
     height: 38px;
   }
 
-  .widget-modal {
-    bottom: calc(52px + env(safe-area-inset-bottom, 0px));
-    max-height: calc(100dvh - 60px);
-  }
-
-  .widget-modal--music {
-    height: calc(100dvh - 60px);
-    max-height: calc(100dvh - 60px);
-  }
-
-  .vinyl-wrap {
-    width: 48px;
-    height: 48px;
-  }
-
   .music-layout {
-    gap: 6px;
+    gap: 4px;
+  }
+
+  .music-col--search,
+  .music-col--playlist,
+  .music-player {
+    padding: 4px;
+  }
+
+  #modalScene {
+    width: min(50vw, 180px);
+  }
+
+  #modalClock {
+    width: min(62vw, 230px);
+  }
+
+  .clock-analog {
+    width: 52px;
+    height: 52px;
+  }
+
+  .clock-analog .hand.hour { height: 14px; }
+  .clock-analog .hand.minute { height: 20px; }
+  .clock-analog .hand.second { height: 22px; }
+
+  .clock-digital {
+    font-size: 1rem;
+  }
+
+  .widget-modal--pomo {
+    width: min(48vw, 200px);
+  }
+
+  .pomo-display {
+    font-size: 1.2rem;
+  }
+
+  .gallery-panel {
+    max-height: min(50dvh, 200px);
   }
 
   .gallery-grid {
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    padding: 4px;
   }
 }

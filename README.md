@@ -262,8 +262,8 @@ const CLOUDINARY = {
   cloudName: "dwusxbhbr",      // Đổi nếu dùng Cloudinary riêng
   assetFolder: "img_gif",
   transforms: {
-    bg: "w_1920,c_limit,f_auto,q_auto",
-    thumb: "w_220,h_220,c_fill,f_auto,q_90"
+    bg: "w_1920,c_limit,f_gif,q_auto",
+    thumb: "w_220,h_220,c_fill,f_gif,q_90"
   }
 };
 

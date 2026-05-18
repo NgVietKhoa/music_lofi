@@ -49,6 +49,8 @@ const bgStackA = $("#bgStackA");
 const bgStackB = $("#bgStackB");
 const bgA = $("#bgA");
 const bgB = $("#bgB");
+const bgAFill = $("#bgAFill");
+const bgBFill = $("#bgBFill");
 const bgLabel = $("#bgLabel");
 const vinyl = $("#vinyl");
 const vinylWrap = $("#vinylWrap");
@@ -145,6 +147,13 @@ function updateBgLabel() {
   });
 }
 
+function clearBgInlineStyles(img) {
+  if (!img) return;
+  img.style.width = "";
+  img.style.height = "";
+  img.style.transform = "";
+}
+
 function setBackground(index, skipFade) {
   const count = getBackgroundCount();
   index = ((index % count) + count) % count;
@@ -155,12 +164,15 @@ function setBackground(index, skipFade) {
   const incomingStack = showA ? bgStackB : bgStackA;
   const outgoingStack = showA ? bgStackA : bgStackB;
   const incomingMain = showA ? bgB : bgA;
+  const incomingFill = showA ? bgBFill : bgAFill;
   const token = ++bgTransitionToken;
 
   incomingMain.alt = `Background ${index + 1}`;
 
   const applySrc = () => {
+    clearBgInlineStyles(incomingMain);
     incomingMain.src = src;
+    if (incomingFill) incomingFill.src = src;
   };
 
   const commitTransition = () => {
@@ -1153,6 +1165,8 @@ async function init() {
   bgStackA.classList.add("active");
   bgStackB.classList.remove("active");
   state.bgLayerA = true;
+  clearBgInlineStyles(bgA);
+  clearBgInlineStyles(bgB);
   setBackground(state.bgIndex, true);
 
   updateClock();
@@ -1172,6 +1186,14 @@ async function init() {
   syncMobileOrientation();
   mobilePortraitMq.addEventListener("change", syncMobileOrientation);
   window.addEventListener("orientationchange", syncMobileOrientation);
+
+  let bgViewportMobile = isMobileBgViewport();
+  window.addEventListener("resize", () => {
+    const mobile = isMobileBgViewport();
+    if (mobile === bgViewportMobile) return;
+    bgViewportMobile = mobile;
+    setBackground(state.bgIndex, true);
+  });
 }
 
 init();

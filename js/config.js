@@ -3,10 +3,16 @@ const CLOUDINARY = {
   cloudName: "dwusxbhbr",
   assetFolder: "img_gif",
   transforms: {
-    bg: "w_2560,c_limit,f_auto,q_auto",
-    thumb: "w_220,h_220,c_fill,f_auto,q_90"
+    /* f_auto → WebP/AVIF tĩnh trên nhiều mobile; f_gif giữ animation */
+    bg: "w_1920,c_limit,f_gif,q_auto",
+    bgMobile: "w_1280,c_limit,f_gif,q_auto",
+    thumb: "w_220,h_220,c_fill,f_gif,q_90"
   }
 };
+
+function isMobileBgViewport() {
+  return window.matchMedia("(max-width: 900px)").matches;
+}
 
 /** Public IDs sorted 1→102, loaded from js/cloudinary-ids.json at startup */
 let CLOUDINARY_PUBLIC_IDS = [];
@@ -30,7 +36,10 @@ function cloudinaryUrl(publicId, transform) {
 }
 
 function cloudinaryBgUrl(index) {
-  return cloudinaryUrl(CLOUDINARY_PUBLIC_IDS[index], CLOUDINARY.transforms.bg);
+  const transform = isMobileBgViewport()
+    ? CLOUDINARY.transforms.bgMobile
+    : CLOUDINARY.transforms.bg;
+  return cloudinaryUrl(CLOUDINARY_PUBLIC_IDS[index], transform);
 }
 
 function cloudinaryThumbUrl(index) {
