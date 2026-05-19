@@ -262,8 +262,11 @@ const CLOUDINARY = {
   cloudName: "dwusxbhbr",      // Đổi nếu dùng Cloudinary riêng
   assetFolder: "img_gif",
   transforms: {
-    bg: "w_1920,c_limit,f_gif,q_auto",
-    thumb: "w_220,h_220,c_fill,f_gif,q_90"
+    bg: "w_1920,c_limit,f_auto,q_auto,fl_animated",       // nền động (WebP/AVIF)
+    bgMobile: "w_1280,c_limit,f_auto,q_auto,fl_animated",
+    bgFill: "w_960,c_limit,f_auto,q_auto,fl_animated",
+    bgFillMobile: "w_640,c_limit,f_auto,q_auto,fl_animated",
+    thumb: "w_220,h_220,c_fill,f_auto,q_auto,pg_1"        // preview Gallery — 1 frame tĩnh
   }
 };
 

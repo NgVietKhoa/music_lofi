@@ -3,13 +3,14 @@ const CLOUDINARY = {
   cloudName: "dwusxbhbr",
   assetFolder: "img_gif",
   transforms: {
-    /* f_auto → WebP/AVIF tĩnh trên nhiều mobile; f_gif giữ animation */
-    bg: "w_1920,c_limit,f_gif,q_auto",
-    bgMobile: "w_1280,c_limit,f_gif,q_auto",
+    /* Nền: f_auto + fl_animated → WebP/AVIF động (mobile + desktop), nhẹ hơn f_gif */
+    bg: "w_1920,c_limit,f_auto,q_auto,fl_animated",
+    bgMobile: "w_1280,c_limit,f_auto,q_auto,fl_animated",
     /* Lớp blur — nhỏ hơn vì đã bị làm mờ */
-    bgFill: "w_960,c_limit,f_gif,q_auto",
-    bgFillMobile: "w_640,c_limit,f_gif,q_auto",
-    thumb: "w_220,h_220,c_fill,f_gif,q_90"
+    bgFill: "w_960,c_limit,f_auto,q_auto,fl_animated",
+    bgFillMobile: "w_640,c_limit,f_auto,q_auto,fl_animated",
+    /* Gallery preview: ảnh tĩnh (pg_1) — tiết kiệm băng thông */
+    thumb: "w_220,h_220,c_fill,f_auto,q_auto,pg_1"
   }
 };
 
