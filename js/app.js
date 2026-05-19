@@ -126,7 +126,43 @@ function preloadBgIndex(index) {
   index = ((index % count) + count) % count;
   preloadBgUrl(bgPath(index));
   preloadBgUrl(bgFillPath(index));
-  preloadBgUrl(thumbPath(index));
+}
+
+function waitForImgElement(img) {
+  if (!img) return Promise.resolve();
+  if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+  return new Promise((resolve) => {
+    img.addEventListener("load", resolve, { once: true });
+    img.addEventListener("error", resolve, { once: true });
+  });
+}
+
+function scheduleBgCrossfade() {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+}
+
+function getBgStackElements(useLayerA) {
+  return useLayerA
+    ? { main: bgA, fill: bgAFill, stack: bgStackA }
+    : { main: bgB, fill: bgBFill, stack: bgStackB };
+}
+
+async function paintBothBgStacks(index) {
+  const fullSrc = bgPath(index);
+  const fillSrc = bgFillPath(index);
+  await Promise.all([preloadBgUrl(fullSrc), preloadBgUrl(fillSrc)]);
+  await paintBgStack(bgA, bgAFill, fullSrc, fillSrc);
+  await paintBgStack(bgB, bgBFill, fullSrc, fillSrc);
+}
+
+async function refreshBackgroundForViewport() {
+  const token = ++bgTransitionToken;
+  await paintBothBgStacks(state.bgIndex);
+  if (token !== bgTransitionToken) return;
+  updateBgLabel();
+  preloadBgNeighbors(state.bgIndex);
 }
 
 function preloadBgNeighbors(index) {
@@ -134,6 +170,24 @@ function preloadBgNeighbors(index) {
   if (count <= 1) return;
   preloadBgIndex((index + 1) % count);
   preloadBgIndex((index - 1 + count) % count);
+  if (count > 2) {
+    preloadBgIndex((index + 2) % count);
+    preloadBgIndex((index - 2 + count) % count);
+  }
+}
+
+function preloadBgStep(delta) {
+  const count = getBackgroundCount();
+  if (!count) return;
+  preloadBgIndex((state.bgIndex + delta + count) % count);
+}
+
+function bindBgPreloadOnIntent(el, delta) {
+  if (!el) return;
+  const run = () => preloadBgStep(delta);
+  el.addEventListener("mouseenter", run);
+  el.addEventListener("focus", run);
+  el.addEventListener("touchstart", run, { passive: true });
 }
 
 /* ========== LOCAL STORAGE ========== */
@@ -191,6 +245,10 @@ function thumbPath(index) {
   return cloudinaryThumbUrl(index);
 }
 
+function galleryPreviewPath(index) {
+  return cloudinaryGalleryPreviewUrl(index);
+}
+
 function updateBgLabel() {
   bgLabel.textContent = t("scene.bgCount", {
     current: state.bgIndex + 1,
@@ -213,11 +271,11 @@ function applyBgToStack(main, fill, mainSrc, fillSrc) {
 
 async function paintBgStack(main, fill, mainSrc, fillSrc) {
   applyBgToStack(main, fill, mainSrc, fillSrc);
-  if (main.decode) {
-    try {
-      await main.decode();
-    } catch (_) { /* ignore */ }
-  }
+  const jobs = [waitForImgElement(main)];
+  if (fill) jobs.push(waitForImgElement(fill));
+  if (main.decode) jobs.push(main.decode().catch(() => {}));
+  if (fill?.decode) jobs.push(fill.decode().catch(() => {}));
+  await Promise.all(jobs);
 }
 
 function setBackground(index, skipFade) {
@@ -227,7 +285,6 @@ function setBackground(index, skipFade) {
 
   const fullSrc = bgPath(index);
   const fillSrc = bgFillPath(index);
-  const thumbSrc = thumbPath(index);
   const showA = state.bgLayerA;
   const incomingStack = showA ? bgStackB : bgStackA;
   const outgoingStack = showA ? bgStackA : bgStackB;
@@ -246,16 +303,11 @@ function setBackground(index, skipFade) {
     saveStorage();
   };
 
-  const upgradeToFull = async () => {
-    if (token !== bgTransitionToken) return;
-    if (incomingMain.getAttribute("src") === fullSrc) return;
-    await preloadBgUrl(fullSrc);
-    if (token !== bgTransitionToken) return;
-    await paintBgStack(incomingMain, incomingFill, fullSrc, fillSrc);
-  };
-
-  const finishSwitch = () => {
+  const finishSwitch = async () => {
+    const wasLayerA = showA;
     commitTransition();
+    const hidden = getBgStackElements(wasLayerA);
+    await paintBgStack(hidden.main, hidden.fill, fullSrc, fillSrc);
     preloadBgNeighbors(index);
     if (pendingBgToast) {
       pendingBgToast = false;
@@ -267,42 +319,33 @@ function setBackground(index, skipFade) {
   };
 
   const runFade = async () => {
-    if (bgUrlReady.has(fullSrc)) {
-      await paintBgStack(incomingMain, incomingFill, fullSrc, fillSrc);
-      if (token !== bgTransitionToken) return;
-      finishSwitch();
-      return;
-    }
-
-    const fullPreload = preloadBgUrl(fullSrc);
-    await preloadBgUrl(thumbSrc);
+    await Promise.all([preloadBgUrl(fullSrc), preloadBgUrl(fillSrc)]);
     if (token !== bgTransitionToken) return;
 
-    if (bgUrlReady.has(fullSrc)) {
-      await paintBgStack(incomingMain, incomingFill, fullSrc, fillSrc);
-    } else {
-      await paintBgStack(incomingMain, incomingFill, thumbSrc, thumbSrc);
-    }
+    await paintBgStack(incomingMain, incomingFill, fullSrc, fillSrc);
     if (token !== bgTransitionToken) return;
-    finishSwitch();
 
-    await fullPreload;
-    upgradeToFull();
+    await scheduleBgCrossfade();
+    if (token !== bgTransitionToken) return;
+
+    await finishSwitch();
   };
 
   if (skipFade) {
-    applyBgToStack(incomingMain, incomingFill, fullSrc, fillSrc);
-    commitTransition();
-    preloadBgNeighbors(index);
-    preloadBgUrl(fullSrc);
-    preloadBgUrl(fillSrc);
-    if (pendingBgToast) {
-      pendingBgToast = false;
-      toastKey("toast.wallpaper", {
-        current: state.bgIndex + 1,
-        total: getBackgroundCount()
-      }, "success");
-    }
+    (async () => {
+      await paintBothBgStacks(index);
+      if (token !== bgTransitionToken) return;
+      updateBgLabel();
+      saveStorage();
+      preloadBgNeighbors(index);
+      if (pendingBgToast) {
+        pendingBgToast = false;
+        toastKey("toast.wallpaper", {
+          current: state.bgIndex + 1,
+          total: getBackgroundCount()
+        }, "success");
+      }
+    })();
     return;
   }
 
@@ -471,23 +514,23 @@ function updateGalleryPreview(index) {
   index = ((index % count) + count) % count;
   galleryPickIndex = index;
 
-  const thumb = thumbPath(index);
+  const preview = galleryPreviewPath(index);
   const full = bgPath(index);
   preloadBgUrl(full);
 
-  const showThumb = () => {
+  const showPreview = () => {
     if (galleryPickIndex !== index) return;
     if (galleryPreviewImg) {
       galleryPreviewImg.classList.remove("is-switching");
-      galleryPreviewImg.src = thumb;
+      galleryPreviewImg.src = preview;
       galleryPreviewImg.alt = t("scene.bgAlt", { n: index + 1 });
     }
-    if (galleryPreviewFill) galleryPreviewFill.src = thumb;
+    if (galleryPreviewFill) galleryPreviewFill.src = preview;
   };
 
   if (galleryPreviewImg) {
     galleryPreviewImg.classList.add("is-switching");
-    preloadBgUrl(thumb).then(showThumb);
+    preloadBgUrl(preview).then(showPreview);
   }
   if (galleryPreviewMeta) {
     galleryPreviewMeta.textContent = `${index + 1} / ${count}`;
@@ -1268,9 +1311,13 @@ function bindEvents() {
     });
   });
 
+  bindBgPreloadOnIntent($("#bgPrev"), -1);
+  bindBgPreloadOnIntent($("#bgNext"), 1);
   $("#bgPrev").addEventListener("click", bgPrev);
   $("#bgNext").addEventListener("click", bgNext);
   $("#bgShuffle").addEventListener("click", bgShuffle);
+  bindBgPreloadOnIntent(galleryPrev, -1);
+  bindBgPreloadOnIntent(galleryNext, 1);
   $("#themeToggle").addEventListener("click", toggleTheme);
   $("#langToggle").addEventListener("click", switchLanguage);
   $("#galleryOpen").addEventListener("click", openGallery);
@@ -1454,16 +1501,16 @@ async function init() {
   syncMobileOrientation();
   window.addEventListener("orientationchange", syncMobileOrientation);
 
-  let bgViewportMobile = isMobileBgViewport();
-  window.addEventListener("resize", () => {
-    const mobile = isMobileBgViewport();
-    if (mobile === bgViewportMobile) return;
-    bgViewportMobile = mobile;
-    bgUrlReady.clear();
-    bgImageCache.clear();
-    setBackground(state.bgIndex, true);
-    preloadBgNeighbors(state.bgIndex);
-  });
+  let bgViewportRefreshTimer = null;
+  const bgViewportMq = window.matchMedia("(max-width: 900px)");
+  const scheduleBgViewportRefresh = () => {
+    clearTimeout(bgViewportRefreshTimer);
+    bgViewportRefreshTimer = setTimeout(() => {
+      bgViewportRefreshTimer = null;
+      refreshBackgroundForViewport();
+    }, 150);
+  };
+  bgViewportMq.addEventListener("change", scheduleBgViewportRefresh);
 
   const elapsed = performance.now() - loadingStarted;
   if (elapsed < APP_LOADING_MIN_MS) await waitMs(APP_LOADING_MIN_MS - elapsed);

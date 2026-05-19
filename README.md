@@ -266,7 +266,9 @@ const CLOUDINARY = {
     bgMobile: "w_1280,c_limit,f_auto,q_auto,fl_animated",
     bgFill: "w_960,c_limit,f_auto,q_auto,fl_animated",
     bgFillMobile: "w_640,c_limit,f_auto,q_auto,fl_animated",
-    thumb: "w_220,h_220,c_fill,f_auto,q_auto,pg_1"        // preview Gallery — 1 frame tĩnh
+    galleryPreview: "w_1280,c_limit,f_auto,q_auto,pg_1", // Gallery — tĩnh, giữ tỉ lệ
+    galleryPreviewMobile: "w_800,c_limit,f_auto,q_auto,pg_1",
+    thumb: "w_320,c_limit,f_auto,q_auto,pg_1"             // preload nhỏ
   }
 };
 

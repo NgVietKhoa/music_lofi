@@ -9,8 +9,11 @@ const CLOUDINARY = {
     /* Lớp blur — nhỏ hơn vì đã bị làm mờ */
     bgFill: "w_960,c_limit,f_auto,q_auto,fl_animated",
     bgFillMobile: "w_640,c_limit,f_auto,q_auto,fl_animated",
-    /* Gallery preview: ảnh tĩnh (pg_1) — tiết kiệm băng thông */
-    thumb: "w_220,h_220,c_fill,f_auto,q_auto,pg_1"
+    /* Gallery preview: 1 frame, giữ tỉ lệ — không crop */
+    galleryPreview: "w_1280,c_limit,f_auto,q_auto,pg_1",
+    galleryPreviewMobile: "w_800,c_limit,f_auto,q_auto,pg_1",
+    /* Preload nhỏ (hàng xóm) — không dùng cho hiển thị gallery */
+    thumb: "w_320,c_limit,f_auto,q_auto,pg_1"
   }
 };
 
@@ -55,6 +58,13 @@ function cloudinaryBgFillUrl(index) {
 
 function cloudinaryThumbUrl(index) {
   return cloudinaryUrl(CLOUDINARY_PUBLIC_IDS[index], CLOUDINARY.transforms.thumb);
+}
+
+function cloudinaryGalleryPreviewUrl(index) {
+  const transform = isMobileBgViewport()
+    ? CLOUDINARY.transforms.galleryPreviewMobile
+    : CLOUDINARY.transforms.galleryPreview;
+  return cloudinaryUrl(CLOUDINARY_PUBLIC_IDS[index], transform);
 }
 
 const YOUTUBE_API = "/api/youtube";
