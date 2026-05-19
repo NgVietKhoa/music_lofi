@@ -1,0 +1,466 @@
+/* ========== MOBILE — portrait + landscape + layout ========== */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+body.is-mobile {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Chặn zoom khi double-tap / focus ô nhập (iOS cần font ≥16px) */
+@media (max-width: 900px) {
+  body.is-mobile input,
+  body.is-mobile textarea,
+  body.is-mobile select {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+
+  body.is-mobile .yt-search-input {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+
+  body.is-mobile .dock-desktop-only {
+    display: none !important;
+  }
+}
+
+body.modal-open-lock {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* ----- Mobile: modal nhạc xếp dọc (không 3 cột) ----- */
+@media (max-width: 900px) {
+  /* Nhạc: luôn xếp dọc (không 3 cột chật) */
+  body.is-mobile .widget-modal--music.open .music-layout,
+  body.is-mobile .widget-modal--music.layout-expanded .music-layout,
+  body.is-mobile .widget-modal--music.layout-expanded .music-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: unset !important;
+    grid-template-rows: unset !important;
+    grid-template-areas: unset !important;
+    gap: 12px !important;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.is-mobile .widget-modal--music .music-col--search {
+    display: flex !important;
+    flex: 0 0 auto;
+    order: 0;
+    min-height: 0;
+    max-height: min(36dvh, 280px);
+    grid-area: unset !important;
+  }
+
+  body.is-mobile .widget-modal--music .music-col--search .yt-search-results {
+    flex: 1;
+    min-height: 48px;
+    max-height: min(28dvh, 200px);
+  }
+
+  body.is-mobile .widget-modal--music .music-col--player {
+    display: flex !important;
+    flex: 0 0 auto;
+    order: 1;
+    grid-area: unset !important;
+  }
+
+  body.is-mobile .widget-modal--music .music-col--playlist {
+    display: flex !important;
+    flex: 1;
+    min-height: 88px;
+    max-height: min(30dvh, 220px);
+    order: 2;
+    grid-area: unset !important;
+  }
+
+  body.is-mobile .widget-modal--music .yt-search-input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  body.is-mobile .widget-modal--music .yt-search-btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+
+  body.is-mobile .widget-modal--music .player-controls .btn-icon {
+    max-width: none;
+    width: 44px;
+    height: 44px;
+  }
+
+  body.is-mobile .widget-modal--music .player-controls .btn-play {
+    width: 48px;
+    height: 48px;
+    max-width: none;
+  }
+
+  body.is-mobile .widget-modal--music.open,
+  body.is-mobile .widget-modal--music.layout-expanded {
+    width: min(calc(100vw - 12px), 720px) !important;
+    max-width: min(calc(100vw - 12px), 720px) !important;
+    max-height: min(90dvh, calc(100dvh - 52px - env(safe-area-inset-top, 0px))) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  body.is-mobile .toast-stack {
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    width: min(calc(100vw - 32px), 300px);
+    gap: 6px;
+  }
+
+  body.is-mobile .toast {
+    padding: 8px 10px;
+    gap: 7px;
+    border-radius: 11px;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  }
+
+  body.is-mobile .toast-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  body.is-mobile .toast-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  body.is-mobile .toast-close {
+    width: 24px;
+    height: 24px;
+    margin: -2px -4px -2px 0;
+    font-size: 1.05rem;
+    border-radius: 6px;
+  }
+}
+
+/* ----- Portrait ----- */
+@media (max-width: 900px) and (orientation: portrait) {
+  .rotate-hint {
+    display: none;
+  }
+
+  .dock {
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    transform: none;
+    max-width: none;
+    width: auto;
+    margin: 0 max(8px, env(safe-area-inset-left)) 0 max(8px, env(safe-area-inset-right));
+    padding: 8px 10px;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    justify-content: flex-start;
+  }
+
+  .dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dock-btn {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  .dock-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .dock-divider {
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  body.is-mobile-portrait .modal-backdrop.open {
+    background: rgba(8, 6, 6, 0.55);
+  }
+
+  body.is-mobile-portrait .widget-modal:not([hidden]) {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(92dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 8px));
+    margin: 0;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    border-radius: 18px 18px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease, visibility 0.3s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  body.is-mobile-portrait .widget-modal.open,
+  body.is-mobile-portrait .widget-modal.layout-expanded {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+  }
+
+  body.is-mobile-portrait .widget-modal[hidden] {
+    display: none !important;
+  }
+
+  body.is-mobile-portrait .widget-modal .modal-header {
+    flex-shrink: 0;
+    margin-bottom: 12px;
+  }
+
+  body.is-mobile-portrait .widget-modal .modal-header .panel-title {
+    font-size: 1rem;
+  }
+
+  body.is-mobile-portrait .modal-header .btn-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  body.is-mobile-portrait .widget-modal--music {
+    height: min(90dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 16px));
+    max-height: min(90dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 16px));
+  }
+
+  body.is-mobile-portrait .music-player {
+    padding: 12px;
+  }
+
+  body.is-mobile-portrait .music-col--player .player-header {
+    flex-direction: row;
+    text-align: left;
+    gap: 12px;
+  }
+
+  body.is-mobile-portrait .vinyl-wrap {
+    width: 56px;
+    height: 56px;
+  }
+
+  body.is-mobile-portrait .track-info h3 {
+    font-size: 0.95rem;
+  }
+
+  body.is-mobile-portrait .yt-result-item {
+    padding: 10px 8px;
+    min-height: 44px;
+  }
+
+  body.is-mobile-portrait .playlist-item {
+    padding: 10px 10px;
+    font-size: 0.85rem;
+    min-height: 44px;
+  }
+
+  body.is-mobile-portrait #modalScene,
+  body.is-mobile-portrait #modalClock,
+  body.is-mobile-portrait .widget-modal--pomo {
+    max-height: min(85dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 24px));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  body.is-mobile-portrait .clock-body {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  body.is-mobile-portrait .clock-analog {
+    width: 100px;
+    height: 100px;
+  }
+
+  body.is-mobile-portrait .clock-digital {
+    font-size: 1.75rem;
+  }
+
+  body.is-mobile-portrait .pomo-setting-input {
+    min-height: 48px;
+    font-size: 1.1rem;
+  }
+
+  body.is-mobile-portrait .pomo-controls .btn {
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+
+  body.is-mobile-portrait .scene-nav .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  body.is-mobile-portrait .btn {
+    min-height: 44px;
+  }
+
+  body.is-mobile-portrait .gallery-panel {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body.is-mobile-portrait .gallery-nav {
+    width: 48px;
+    height: 48px;
+  }
+
+  body.is-mobile-portrait .gallery-btn {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+
+  body.is-mobile-portrait .gallery-jump-input {
+    min-height: 44px;
+    font-size: 16px;
+    width: 72px;
+  }
+}
+
+/* ----- Landscape mobile ----- */
+@media (max-width: 900px) and (orientation: landscape) {
+  body.is-mobile .dock {
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 12px);
+    padding: 6px 10px;
+    gap: 4px;
+  }
+
+  body.is-mobile .dock-btn {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  body.is-mobile .dock-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Modal: sheet giữa-dưới, không nhỏ 320px */
+  body.is-mobile.is-mobile-landscape .widget-modal:not([hidden]) {
+    left: 50% !important;
+    right: auto !important;
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    top: auto !important;
+    width: min(calc(100vw - 12px), 92vw) !important;
+    max-width: min(calc(100vw - 12px), 720px) !important;
+    max-height: min(88dvh, calc(100dvh - 44px - env(safe-area-inset-top, 0px))) !important;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.is-mobile.is-mobile-landscape .widget-modal.open,
+  body.is-mobile.is-mobile-landscape .widget-modal.layout-expanded {
+    transform: translateX(-50%) translateY(0) scale(1) !important;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  body.is-mobile.is-mobile-landscape .widget-modal--music.open,
+  body.is-mobile.is-mobile-landscape .widget-modal--music.layout-expanded {
+    width: min(calc(100vw - 8px), 100%) !important;
+    max-width: min(calc(100vw - 8px), 100%) !important;
+    height: min(86dvh, calc(100dvh - 40px)) !important;
+    max-height: min(86dvh, calc(100dvh - 40px)) !important;
+  }
+
+  body.is-mobile.is-mobile-landscape .widget-modal--music .music-col--search {
+    max-height: min(32dvh, 180px);
+  }
+
+  body.is-mobile.is-mobile-landscape .widget-modal--music .music-col--playlist {
+    max-height: min(28dvh, 160px);
+  }
+
+  body.is-mobile.is-mobile-landscape #modalClock.open {
+    width: min(calc(100vw - 24px), 340px) !important;
+    max-height: none !important;
+  }
+
+  body.is-mobile.is-mobile-landscape #modalScene.open {
+    width: min(calc(100vw - 24px), 280px) !important;
+  }
+
+  body.is-mobile.is-mobile-landscape .widget-modal--pomo.open {
+    width: min(calc(100vw - 24px), 360px) !important;
+    max-height: min(88dvh, calc(100dvh - 44px)) !important;
+    overflow-y: auto;
+  }
+
+  body.is-mobile.is-mobile-landscape .clock-body {
+    flex-direction: row;
+    gap: 14px;
+  }
+
+  body.is-mobile.is-mobile-landscape .clock-analog {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+  }
+
+  body.is-mobile.is-mobile-landscape .music-section-label {
+    font-size: 0.72rem;
+  }
+
+  body.is-mobile.is-mobile-landscape .modal-header .panel-title {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-height: 400px) and (orientation: landscape) {
+  body.is-mobile .widget-modal--music.open {
+    height: min(82dvh, calc(100dvh - 38px)) !important;
+    max-height: min(82dvh, calc(100dvh - 38px)) !important;
+  }
+
+  body.is-mobile .widget-modal--music .music-col--search {
+    max-height: min(28dvh, 140px);
+  }
+
+  body.is-mobile .widget-modal--music .music-col--playlist {
+    max-height: min(22dvh, 120px);
+  }
+
+  body.is-mobile .pomo-display {
+    font-size: 1.25rem;
+    margin: 6px 0;
+  }
+}

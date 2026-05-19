@@ -13,8 +13,6 @@
     rgba(20, 16, 12, 0.1) 100%
   );
   --font-ui: "Be Vietnam Pro", system-ui, sans-serif;
-  --font-hand: "Caveat", cursive;
-  --font-mono: "Space Mono", monospace;
   --radius: 20px;
   --transition: 0.3s ease;
 }
@@ -38,6 +36,87 @@ html, body {
   font-family: var(--font-ui);
   color: var(--warm-light);
   background: var(--warm-deep);
+}
+
+/* ========== APP LOADING SCREEN ========== */
+body.is-app-loading .dock,
+body.is-app-loading .widget-modal,
+body.is-app-loading .modal-backdrop,
+body.is-app-loading .toast-stack,
+body.is-app-loading .gallery-panel {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.app-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(20px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom));
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(61, 53, 48, 0.98), rgba(28, 24, 22, 1));
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+
+body.night .app-loading {
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(22, 18, 32, 0.98), rgba(8, 6, 14, 1));
+}
+
+.app-loading.is-hiding {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.app-loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  max-width: 280px;
+}
+
+.app-loading-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.35));
+  animation: app-loading-pulse 2s ease-in-out infinite;
+}
+
+.app-loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(201, 185, 154, 0.2);
+  border-top-color: var(--warm-mid);
+  border-radius: 50%;
+  animation: app-loading-spin 0.85s linear infinite;
+}
+
+.app-loading-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--warm-light);
+  letter-spacing: 0.02em;
+}
+
+.app-loading-sub {
+  font-size: 0.82rem;
+  color: var(--warm-mid);
+  line-height: 1.45;
+}
+
+@keyframes app-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes app-loading-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.88; transform: scale(0.97); }
 }
 
 /* ========== BACKGROUND SYSTEM ========== */
@@ -217,7 +296,7 @@ html, body {
 .scene-nav { justify-content: center; margin-bottom: 10px; }
 
 .scene-controls .bg-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   color: var(--warm-mid);
   margin-bottom: 14px;
@@ -241,8 +320,9 @@ html, body {
 
 /* ========== BUTTONS ========== */
 .btn {
-  font-family: var(--font-hand);
-  font-size: 1.15rem;
+  font-family: var(--font-ui);
+  font-size: 0.92rem;
+  font-weight: 500;
   color: var(--warm-mid);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--glass-border);
@@ -414,12 +494,13 @@ html, body {
 }
 
 .clock-digital {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: clamp(1.6rem, 5vw, 2.1rem);
   font-weight: 700;
   color: var(--warm-light);
   letter-spacing: 0.06em;
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .clock-date {
@@ -513,13 +594,12 @@ html, body {
 }
 
 .music-section-label {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
   color: var(--warm-mid);
   margin-bottom: 6px;
-  font-weight: 400;
+  font-weight: 600;
 }
 
 .music-col--player .player-header {
@@ -681,7 +761,7 @@ html, body {
 .track-meta:empty { display: none; }
 
 .track-time {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 0.7rem;
   color: var(--warm-mid);
 }
@@ -876,7 +956,7 @@ html, body {
 }
 
 .yt-result-sub {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 0.65rem;
   color: var(--warm-mid);
   margin-top: 3px;
@@ -903,7 +983,7 @@ html, body {
 }
 
 .yt-search-empty code {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 0.7rem;
   color: var(--warm-light);
   background: rgba(255, 255, 255, 0.08);
@@ -1033,10 +1113,10 @@ html, body {
 }
 
 .pomo-settings-title {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--warm-mid);
   text-align: center;
   margin: 0 0 8px;
@@ -1064,10 +1144,10 @@ html, body {
 }
 
 .pomo-setting-label {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   color: var(--warm-mid);
   text-align: center;
   line-height: 1.35;
@@ -1076,7 +1156,7 @@ html, body {
 .pomo-setting-input {
   width: 100%;
   min-height: 44px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.2;
@@ -1110,7 +1190,7 @@ html, body {
 }
 
 .pomo-display {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: clamp(1.35rem, 5vw, 2.4rem);
   font-weight: 700;
   margin: 10px 0 14px;
@@ -1226,14 +1306,14 @@ html, body {
 }
 
 .gallery-jump-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 0.85rem;
   color: var(--warm-mid);
 }
 
 .gallery-jump-input {
   width: 64px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 0.9rem;
   font-weight: 600;
   text-align: center;
@@ -1370,7 +1450,7 @@ html, body {
 }
 
 .gallery-counter {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 0.8rem;
   color: var(--warm-mid);
   min-width: 88px;
@@ -1492,22 +1572,7 @@ html, body {
   50% { transform: rotate(0deg); }
 }
 
-/* Portrait trên mobile / tablet hẹp → nhắc xoay ngang, ẩn UI */
-@media (max-width: 900px) and (orientation: portrait) {
-  .rotate-hint {
-    display: flex;
-  }
-
-  .dock,
-  .widget-modal,
-  .modal-backdrop,
-  .gallery-backdrop,
-  .gallery-panel {
-    visibility: hidden !important;
-    pointer-events: none !important;
-    opacity: 0 !important;
-  }
-}
+/* Portrait mobile → css/mobile.css */
 
 /* Tablet ngang & mobile ngang */
 @media (max-width: 900px) and (orientation: landscape),
@@ -2017,5 +2082,674 @@ html, body {
   .gallery-btn {
     padding: 7px 10px;
     font-size: 0.72rem;
+  }
+}
+
+/* ========== LAYOUT PICKER ========== */
+#modalLayout {
+  width: min(92vw, 520px);
+  max-height: min(78vh, 580px);
+}
+
+.layout-section-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--warm-mid);
+  margin: 0 0 10px;
+}
+
+.layout-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.layout-preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--warm-light);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+}
+
+.layout-preset-card:hover {
+  border-color: var(--warm-mid);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.layout-preset-card.is-active {
+  border-color: rgba(201, 185, 154, 0.55);
+  background: rgba(201, 185, 154, 0.18);
+}
+
+.layout-preset-preview {
+  width: 100%;
+  height: 52px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  position: relative;
+}
+
+.layout-preset-preview::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  background: rgba(201, 185, 154, 0.55);
+}
+
+.layout-preset-preview--minimal::after {
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 8px;
+}
+
+.layout-preset-preview--focus::after {
+  top: 8px;
+  left: 8px;
+}
+
+.layout-preset-preview--focus::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  background: rgba(201, 185, 154, 0.4);
+}
+
+.layout-preset-preview--chill::after {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.layout-preset-preview--studio::after {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 12px;
+}
+
+.layout-preset-preview--custom {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.04) 6px,
+    rgba(0, 0, 0, 0.12) 6px,
+    rgba(0, 0, 0, 0.12) 12px
+  );
+}
+
+.layout-preset-preview--custom::after {
+  display: none;
+}
+
+.layout-preset-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.layout-preset-desc {
+  font-size: 0.72rem;
+  color: var(--warm-mid);
+  line-height: 1.35;
+}
+
+.layout-custom-panel {
+  display: none;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 4px;
+}
+
+.layout-custom-panel.is-open {
+  display: block;
+}
+
+.layout-custom-hint {
+  font-size: 0.75rem;
+  color: var(--warm-mid);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.layout-custom-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.layout-custom-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 1.1fr) minmax(0, 0.75fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.layout-custom-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--warm-light);
+  cursor: pointer;
+}
+
+.layout-custom-toggle input {
+  accent-color: var(--warm-mid);
+}
+
+.layout-custom-slot,
+.layout-custom-size {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--warm-light);
+  color-scheme: dark;
+}
+
+.layout-custom-slot:disabled,
+.layout-custom-size:disabled {
+  opacity: 0.45;
+}
+
+/* ========== WORKSPACE PINNED WIDGETS ========== */
+body.layout-workspace .widget-modal.layout-pinned {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  top: auto;
+  overflow: auto;
+  max-height: min(42vh, 360px);
+  z-index: 25;
+  transform: none;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+body.layout-workspace .widget-modal.layout-pinned .modal-header {
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+/* Ghim trên nền — không đóng/xóa được, ẩn nút × */
+body.layout-workspace .widget-modal.layout-pinned:not(.layout-expanded) .modal-close {
+  display: none;
+}
+
+body.layout-workspace .widget-modal.layout-pinned .modal-header .panel-title {
+  font-size: 0.95rem;
+}
+
+body.layout-workspace .widget-modal.layout-pinned.layout-expanded {
+  z-index: 50;
+  left: 50% !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: calc(168px + env(safe-area-inset-bottom, 0px)) !important;
+  transform: translateX(-50%) !important;
+  max-height: min(68vh, 520px) !important;
+  cursor: default;
+}
+
+body.layout-workspace .widget-modal.layout-pinned.layout-slot-top-left:not(.layout-expanded) {
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+}
+
+body.layout-workspace .widget-modal.layout-pinned.layout-slot-top-center:not(.layout-expanded) {
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%) !important;
+}
+
+body.layout-workspace .widget-modal.layout-pinned.layout-slot-top-right:not(.layout-expanded) {
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+}
+
+body.layout-workspace .widget-modal.layout-pinned.layout-slot-bottom-left:not(.layout-expanded) {
+  bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+}
+
+body.layout-workspace .widget-modal.layout-pinned.layout-slot-bottom-center:not(.layout-expanded) {
+  bottom: calc(168px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) !important;
+}
+
+body.layout-workspace .widget-modal.layout-pinned.layout-slot-bottom-right:not(.layout-expanded) {
+  bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+}
+
+/* Clock compact */
+body.layout-workspace #modalClock.layout-pinned.layout-size-sm {
+  width: min(88vw, 220px);
+  padding: 12px 14px;
+}
+
+body.layout-workspace #modalClock.layout-pinned.layout-size-sm .clock-analog {
+  display: none;
+}
+
+body.layout-workspace #modalClock.layout-pinned.layout-size-sm .clock-digital {
+  font-size: 1.35rem;
+}
+
+body.layout-workspace #modalClock.layout-pinned.layout-size-md {
+  width: min(88vw, 300px);
+}
+
+body.layout-workspace #modalClock.layout-pinned.layout-size-md .clock-analog {
+  width: 72px;
+  height: 72px;
+}
+
+/* Music compact */
+body.layout-workspace #modalMusic.layout-pinned.layout-size-sm {
+  width: min(92vw, 320px);
+  padding: 12px 14px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-size-sm .music-col--search,
+body.layout-workspace #modalMusic.layout-pinned.layout-size-sm .music-col--playlist {
+  display: none;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-size-sm .music-layout {
+  grid-template-columns: 1fr;
+}
+
+/* md/lg ghim: tìm kiếm full width trên, player + playlist dưới */
+body.layout-workspace #modalMusic.layout-pinned.layout-size-md:not(.layout-expanded),
+body.layout-workspace #modalMusic.layout-pinned.layout-size-lg:not(.layout-expanded) {
+  width: min(calc(100vw - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)), 680px);
+  max-height: min(62dvh, 400px);
+  padding: 12px 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-size-lg:not(.layout-expanded) {
+  width: min(calc(100vw - 16px), 760px);
+  max-height: min(65dvh, 440px);
+}
+
+/* Studio / Thư giãn / Tùy chỉnh (dưới giữa): chiều cao nhạc */
+body.layout-workspace[data-layout="studio"]
+  #modalMusic.layout-pinned.layout-size-lg.layout-slot-bottom-center:not(.layout-expanded) {
+  max-height: min(68dvh, 500px);
+}
+
+body.layout-workspace[data-layout="studio"] #modalMusic.layout-pinned.layout-expanded {
+  max-height: min(72dvh, 560px) !important;
+}
+
+body.layout-workspace[data-layout="chill"] #modalMusic.layout-pinned.layout-expanded {
+  max-height: min(68dvh, 520px) !important;
+}
+
+body.layout-workspace[data-layout="custom"]
+  #modalMusic.layout-pinned.layout-size-lg.layout-slot-bottom-center:not(.layout-expanded) {
+  max-height: min(68dvh, 500px);
+}
+
+body.layout-workspace[data-layout="custom"]
+  #modalMusic.layout-pinned.layout-size-md.layout-slot-bottom-center:not(.layout-expanded) {
+  max-height: min(65dvh, 460px);
+}
+
+body.layout-workspace[data-layout="custom"] #modalMusic.layout-pinned.layout-expanded {
+  max-height: min(72dvh, 560px) !important;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-size-md:not(.layout-expanded) .music-layout,
+body.layout-workspace #modalMusic.layout-pinned.layout-size-lg:not(.layout-expanded) .music-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "search search"
+    "player playlist";
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-size-md:not(.layout-expanded) .music-col--search,
+body.layout-workspace #modalMusic.layout-pinned.layout-size-lg:not(.layout-expanded) .music-col--search {
+  grid-area: search;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  padding: 10px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-size-md:not(.layout-expanded) .music-col--player,
+body.layout-workspace #modalMusic.layout-pinned.layout-size-lg:not(.layout-expanded) .music-col--player {
+  grid-area: player;
+  min-width: 0;
+  min-height: 0;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-size-md:not(.layout-expanded) .music-col--playlist,
+body.layout-workspace #modalMusic.layout-pinned.layout-size-lg:not(.layout-expanded) .music-col--playlist {
+  grid-area: playlist;
+  min-width: 0;
+  min-height: 0;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .music-section-label {
+  font-size: 0.72rem;
+  margin-bottom: 6px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .yt-search-row {
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .yt-search-input {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  font-size: 0.84rem;
+  padding: 8px 10px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .yt-search-btn {
+  flex-shrink: 0;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .music-col--search .yt-search-results {
+  flex: 1;
+  min-height: 52px;
+  max-height: 100px;
+  margin-top: 8px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .yt-search-idle,
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .yt-search-empty,
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .yt-search-hint {
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .music-player {
+  padding: 10px;
+  height: 100%;
+  min-height: 0;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .music-col--player .player-header {
+  flex-direction: row;
+  align-items: center;
+  text-align: left;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .vinyl-wrap {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .track-info h3 {
+  font-size: 0.8rem;
+  -webkit-line-clamp: 2;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .track-meta,
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .track-time {
+  font-size: 0.68rem;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .music-col--player .progress-wrap {
+  margin: 8px 0 6px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .player-controls {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .player-controls .btn-icon {
+  width: 100%;
+  max-width: 34px;
+  height: 34px;
+  margin: 0 auto;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .player-controls .btn-play {
+  max-width: 38px;
+  height: 38px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .playlist-item {
+  font-size: 0.78rem;
+  padding: 8px 10px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned:not(.layout-expanded) .playlist-empty {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  padding: 8px;
+}
+
+/* Mở rộng widget ghim → đủ 3 cột như modal nhạc bình thường */
+body.layout-workspace #modalMusic.layout-pinned.layout-expanded {
+  width: min(96vw, 920px) !important;
+  max-width: min(96vw, 920px) !important;
+  max-height: min(78dvh, 520px) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-expanded .music-layout {
+  display: grid !important;
+  grid-template-columns: minmax(200px, 1fr) minmax(240px, 1.15fr) minmax(180px, 0.85fr) !important;
+  flex: 1;
+  min-height: 0;
+  gap: 14px;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-expanded .music-col--search,
+body.layout-workspace #modalMusic.layout-pinned.layout-expanded .music-col--playlist {
+  display: flex !important;
+}
+
+body.layout-workspace #modalMusic.layout-pinned.layout-expanded .music-col--search .yt-search-results {
+  max-height: none;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Pomo compact */
+body.layout-workspace #modalPomo.layout-pinned.layout-size-sm {
+  width: min(88vw, 240px);
+  padding: 12px 14px;
+}
+
+body.layout-workspace #modalPomo.layout-pinned.layout-size-sm .pomo-settings,
+body.layout-workspace #modalPomo.layout-pinned.layout-size-sm .pomo-settings-title {
+  display: none;
+}
+
+body.layout-workspace #modalPomo.layout-pinned.layout-size-sm .pomo-display {
+  font-size: 1.5rem;
+  margin: 4px 0 10px;
+}
+
+body.layout-workspace #modalPomo.layout-pinned.layout-size-md {
+  width: min(88vw, 300px);
+}
+
+/* ========== TOAST ========== */
+.toast-stack {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  right: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: min(92vw, 380px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--warm-light);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.32);
+  opacity: 0;
+  transform: translateY(-28px) scale(0.96);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.toast--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.toast--out {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.98);
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--warm-mid);
+}
+
+.toast-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+.toast-message {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin: -4px -6px -4px 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--warm-mid);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--warm-light);
+}
+
+.toast--success {
+  border-color: rgba(160, 195, 130, 0.45);
+}
+
+.toast--success .toast-icon {
+  color: #b8d4a0;
+}
+
+.toast--error {
+  border-color: rgba(220, 130, 110, 0.5);
+}
+
+.toast--error .toast-icon {
+  color: #e8a090;
+}
+
+.toast--warn {
+  border-color: rgba(210, 175, 100, 0.45);
+}
+
+.toast--warn .toast-icon {
+  color: #dcc88a;
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  .toast-stack {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    width: min(calc(100vw - 24px), 380px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    transition: opacity 0.15s ease;
+    transform: none;
+  }
+
+  .toast--visible,
+  .toast--out {
+    transform: none;
   }
 }

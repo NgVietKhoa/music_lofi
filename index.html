@@ -2,16 +2,28 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Lofi Chill — Music & Vibes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Lofi Thư Giãn — Nhạc và không gian làm việc</title>
   <link rel="icon" href="assets/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="assets/logo.png" />
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+  <link rel="dns-prefetch" href="https://res.cloudinary.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Caveat:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/mobile.css" />
 </head>
-<body>
+<body class="is-app-loading">
+  <div id="appLoading" class="app-loading" role="status" aria-live="polite" aria-busy="true">
+    <div class="app-loading-inner">
+      <img class="app-loading-logo" src="assets/logo.png" alt="" width="72" height="72" decoding="async" />
+      <div class="app-loading-spinner" aria-hidden="true"></div>
+      <p class="app-loading-text" data-i18n="loading.message">Đang tải không gian...</p>
+      <p class="app-loading-sub" data-i18n="loading.sub">Chờ một chút nhé</p>
+    </div>
+  </div>
+
   <!-- ========== BACKGROUND ========== -->
   <div class="bg-layer" aria-hidden="true">
     <div class="bg-stack active" id="bgStackA">
@@ -27,26 +39,32 @@
 
   <div class="rotate-hint" id="rotateHint" aria-live="polite">
     <div class="rotate-hint-icon" aria-hidden="true">↻</div>
-    <p class="rotate-hint-title">Xoay ngang màn hình</p>
-    <p class="rotate-hint-text">Lofi Chill được tối ưu cho chế độ ngang trên điện thoại.</p>
+    <p class="rotate-hint-title" data-i18n="rotate.title">Xoay ngang màn hình</p>
+    <p class="rotate-hint-text" data-i18n="rotate.text">Lofi Thư Giãn được tối ưu cho chế độ ngang trên điện thoại.</p>
   </div>
 
-  <!-- ========== DOCK (LifeAt / Lofi.co style) ========== -->
-  <nav class="dock" id="dock" aria-label="Công cụ">
-    <button type="button" class="dock-btn" data-modal="modalScene" title="Nền & Gallery">
+  <!-- ========== DOCK ========== -->
+  <nav class="dock" id="dock" data-i18n-aria-label="dock.tools" aria-label="Công cụ">
+    <button type="button" class="dock-btn" data-modal="modalScene" data-i18n-title="dock.scene" title="Nền">
       <i data-lucide="image"></i>
     </button>
-    <button type="button" class="dock-btn" data-modal="modalClock" title="Đồng hồ">
+    <button type="button" class="dock-btn" data-modal="modalClock" data-i18n-title="dock.clock" title="Đồng hồ">
       <i data-lucide="clock"></i>
     </button>
-    <button type="button" class="dock-btn" data-modal="modalMusic" title="Nhạc">
+    <button type="button" class="dock-btn" data-modal="modalMusic" data-i18n-title="dock.music" title="Nhạc">
       <i data-lucide="music"></i>
     </button>
-    <button type="button" class="dock-btn" data-modal="modalPomo" title="Pomodoro">
+    <button type="button" class="dock-btn" data-modal="modalPomo" data-i18n-title="dock.focus" title="Tập trung">
       <i data-lucide="timer"></i>
     </button>
-    <span class="dock-divider" aria-hidden="true"></span>
-    <button type="button" class="dock-btn" id="themeToggle" title="Day / Night">
+    <button type="button" class="dock-btn dock-desktop-only" data-modal="modalLayout" data-i18n-title="dock.layout" title="Bố cục">
+      <i data-lucide="layout-grid"></i>
+    </button>
+    <span class="dock-divider dock-desktop-only" aria-hidden="true"></span>
+    <button type="button" class="dock-btn" id="langToggle" data-i18n-title="dock.language" title="English">
+      <i data-lucide="languages"></i>
+    </button>
+    <button type="button" class="dock-btn" id="themeToggle" data-i18n-title="dock.theme" title="Ban ngày / Ban đêm">
       <i data-lucide="sun"></i>
     </button>
   </nav>
@@ -55,29 +73,29 @@
   <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true"></div>
 
   <!-- ========== SCENE / BACKGROUND ========== -->
-  <section class="widget-modal glass" id="modalScene" role="dialog" aria-label="Nền" hidden>
+  <section class="widget-modal glass" id="modalScene" role="dialog" data-i18n-aria-label="scene.title" aria-label="Nền" hidden>
     <header class="modal-header">
-      <h2 class="panel-title"><i data-lucide="image"></i> Nền</h2>
-      <button type="button" class="btn btn-icon modal-close" aria-label="Đóng"><i data-lucide="x"></i></button>
+      <h2 class="panel-title"><i data-lucide="image"></i> <span data-i18n="scene.title">Nền</span></h2>
+      <button type="button" class="btn btn-icon modal-close" data-i18n-aria-label="common.close" aria-label="Đóng"><i data-lucide="x"></i></button>
     </header>
     <div class="scene-controls">
       <div class="btn-row scene-nav">
-        <button type="button" class="btn btn-icon" id="bgPrev" title="Ảnh trước"><i data-lucide="chevron-left"></i></button>
-        <button type="button" class="btn btn-icon" id="bgShuffle" title="Ngẫu nhiên"><i data-lucide="shuffle"></i></button>
-        <button type="button" class="btn btn-icon" id="bgNext" title="Ảnh sau"><i data-lucide="chevron-right"></i></button>
+        <button type="button" class="btn btn-icon" id="bgPrev" data-i18n-title="scene.bgPrev" title="Ảnh trước"><i data-lucide="chevron-left"></i></button>
+        <button type="button" class="btn btn-icon" id="bgShuffle" data-i18n-title="scene.shuffle" title="Ngẫu nhiên"><i data-lucide="shuffle"></i></button>
+        <button type="button" class="btn btn-icon" id="bgNext" data-i18n-title="scene.bgNext" title="Ảnh sau"><i data-lucide="chevron-right"></i></button>
       </div>
-      <p class="bg-label" id="bgLabel">bg 1 / 102</p>
+      <p class="bg-label" id="bgLabel">Nền 1 / 102</p>
       <button type="button" class="btn btn-with-icon btn-block" id="galleryOpen">
-        <i data-lucide="images"></i><span>Chọn nền</span>
+        <i data-lucide="images"></i><span data-i18n="scene.pickWallpaper">Chọn nền</span>
       </button>
     </div>
   </section>
 
   <!-- ========== CLOCK ========== -->
-  <section class="widget-modal glass" id="modalClock" role="dialog" aria-label="Đồng hồ" hidden>
+  <section class="widget-modal glass" id="modalClock" role="dialog" data-i18n-aria-label="clock.title" aria-label="Đồng hồ" hidden>
     <header class="modal-header">
-      <h2 class="panel-title"><i data-lucide="clock"></i> Time</h2>
-      <button type="button" class="btn btn-icon modal-close" aria-label="Đóng"><i data-lucide="x"></i></button>
+      <h2 class="panel-title"><i data-lucide="clock"></i> <span data-i18n="clock.title">Đồng hồ</span></h2>
+      <button type="button" class="btn btn-icon modal-close" data-i18n-aria-label="common.close" aria-label="Đóng"><i data-lucide="x"></i></button>
     </header>
     <div class="clock-body">
       <div class="clock-analog" id="clockAnalog" aria-hidden="true">
@@ -95,25 +113,25 @@
   </section>
 
   <!-- ========== MUSIC ========== -->
-  <section class="widget-modal glass widget-modal--music" id="modalMusic" role="dialog" aria-label="Nhạc" hidden>
+  <section class="widget-modal glass widget-modal--music" id="modalMusic" role="dialog" data-i18n-aria-label="music.title" aria-label="Nhạc" hidden>
     <header class="modal-header">
-      <h2 class="panel-title"><i data-lucide="music"></i> Music</h2>
-      <button type="button" class="btn btn-icon modal-close" aria-label="Đóng"><i data-lucide="x"></i></button>
+      <h2 class="panel-title"><i data-lucide="music"></i> <span data-i18n="music.title">Nhạc</span></h2>
+      <button type="button" class="btn btn-icon modal-close" data-i18n-aria-label="common.close" aria-label="Đóng"><i data-lucide="x"></i></button>
     </header>
     <div class="music-layout">
       <aside class="music-col music-col--search">
-        <h3 class="music-section-label">Tìm kiếm</h3>
+        <h3 class="music-section-label" data-i18n="music.search">Tìm kiếm</h3>
         <div class="yt-search-row">
-          <input type="search" id="ytSearchInput" class="yt-search-input" placeholder="Tìm trên YouTube..." autocomplete="off" />
-          <button type="button" class="btn btn-icon yt-search-btn" id="ytSearchBtn" title="Tìm"><i data-lucide="search"></i></button>
+          <input type="search" id="ytSearchInput" class="yt-search-input" data-i18n-placeholder="music.searchPlaceholder" placeholder="Tìm trên YouTube..." autocomplete="off" />
+          <button type="button" class="btn btn-icon yt-search-btn" id="ytSearchBtn" data-i18n-title="music.searchBtn" title="Tìm"><i data-lucide="search"></i></button>
         </div>
         <div class="yt-search-results" id="ytSearchResults">
-          <div class="yt-search-results-body"><p class="yt-search-idle">Nhập từ khóa để tìm</p></div>
+          <div class="yt-search-results-body"><p class="yt-search-idle" data-i18n="music.searchIdle">Nhập từ khóa để tìm</p></div>
         </div>
       </aside>
 
       <div class="music-col music-col--player music-player">
-        <h3 class="music-section-label">Đang phát</h3>
+        <h3 class="music-section-label" data-i18n="music.nowPlaying">Đang phát</h3>
         <div class="player-header">
           <div class="vinyl-wrap" id="vinylWrap">
             <div class="vinyl" id="vinyl">
@@ -134,16 +152,16 @@
           </div>
         </div>
         <div class="player-controls">
-          <button type="button" class="btn btn-icon" id="musicShuffle" title="Shuffle"><i data-lucide="shuffle"></i></button>
-          <button type="button" class="btn btn-icon" id="musicPrev" title="Previous"><i data-lucide="skip-back"></i></button>
-          <button type="button" class="btn btn-icon btn-play" id="musicPlay" title="Play/Pause"><i data-lucide="play"></i></button>
-          <button type="button" class="btn btn-icon" id="musicNext" title="Next"><i data-lucide="skip-forward"></i></button>
-          <button type="button" class="btn btn-icon" id="musicRepeat" title="Repeat"><i data-lucide="repeat"></i></button>
+          <button type="button" class="btn btn-icon" id="musicShuffle" data-i18n-title="music.shuffle" title="Trộn ngẫu nhiên"><i data-lucide="shuffle"></i></button>
+          <button type="button" class="btn btn-icon" id="musicPrev" data-i18n-title="music.prev" title="Bài trước"><i data-lucide="skip-back"></i></button>
+          <button type="button" class="btn btn-icon btn-play" id="musicPlay" data-i18n-title="music.playPause" title="Phát / Tạm dừng"><i data-lucide="play"></i></button>
+          <button type="button" class="btn btn-icon" id="musicNext" data-i18n-title="music.next" title="Bài sau"><i data-lucide="skip-forward"></i></button>
+          <button type="button" class="btn btn-icon" id="musicRepeat" data-i18n-title="music.repeat" title="Lặp lại"><i data-lucide="repeat"></i></button>
         </div>
       </div>
 
       <aside class="music-col music-col--playlist music-playlist-wrap">
-        <h3 class="music-section-label">Playlist</h3>
+        <h3 class="music-section-label" data-i18n="music.playlist">Danh sách phát</h3>
         <div class="playlist" id="playlist"></div>
       </aside>
     </div>
@@ -153,58 +171,76 @@
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <!-- ========== POMODORO ========== -->
-  <section class="widget-modal glass widget-modal--compact widget-modal--pomo" id="modalPomo" role="dialog" aria-label="Pomodoro" hidden>
+  <section class="widget-modal glass widget-modal--compact widget-modal--pomo" id="modalPomo" role="dialog" data-i18n-aria-label="pomo.title" aria-label="Tập trung" hidden>
     <header class="modal-header">
-      <h2 class="panel-title"><i data-lucide="timer"></i> Pomodoro</h2>
-      <button type="button" class="btn btn-icon modal-close" aria-label="Đóng"><i data-lucide="x"></i></button>
+      <h2 class="panel-title"><i data-lucide="timer"></i> <span data-i18n="pomo.title">Bộ đếm tập trung</span></h2>
+      <button type="button" class="btn btn-icon modal-close" data-i18n-aria-label="common.close" aria-label="Đóng"><i data-lucide="x"></i></button>
     </header>
-    <p class="pomo-settings-title">Thời gian làm việc</p>
+    <p class="pomo-settings-title" data-i18n="pomo.workDuration">Thời gian làm việc</p>
     <div class="pomo-settings pomo-settings--dhms">
       <label class="pomo-setting">
-        <span class="pomo-setting-label">Ngày</span>
+        <span class="pomo-setting-label" data-i18n="pomo.days">Ngày</span>
         <input type="number" id="pomoDays" class="pomo-setting-input" min="0" max="99" value="0" inputmode="numeric" />
       </label>
       <label class="pomo-setting">
-        <span class="pomo-setting-label">Giờ</span>
+        <span class="pomo-setting-label" data-i18n="pomo.hours">Giờ</span>
         <input type="number" id="pomoHours" class="pomo-setting-input" min="0" max="23" value="0" inputmode="numeric" />
       </label>
       <label class="pomo-setting">
-        <span class="pomo-setting-label">Phút</span>
+        <span class="pomo-setting-label" data-i18n="pomo.minutes">Phút</span>
         <input type="number" id="pomoMinutes" class="pomo-setting-input" min="0" max="59" value="25" inputmode="numeric" />
       </label>
     </div>
     <div class="pomo-display" id="pomoDisplay">00:25:00</div>
     <div class="pomo-controls">
-      <button type="button" class="btn" id="pomoStart">Start</button>
-      <button type="button" class="btn" id="pomoPause">Pause</button>
-      <button type="button" class="btn" id="pomoReset">Reset</button>
+      <button type="button" class="btn" id="pomoStart" data-i18n="pomo.start">Bắt đầu</button>
+      <button type="button" class="btn" id="pomoPause" data-i18n="pomo.pause">Tạm dừng</button>
+      <button type="button" class="btn" id="pomoReset" data-i18n="pomo.reset">Đặt lại</button>
     </div>
   </section>
 
-  <!-- ========== GALLERY — wallpaper picker ========== -->
+  <!-- ========== LAYOUT ========== -->
+  <section class="widget-modal glass widget-modal--wide" id="modalLayout" role="dialog" data-i18n-aria-label="layout.title" aria-label="Bố cục" hidden>
+    <header class="modal-header">
+      <h2 class="panel-title"><i data-lucide="layout-grid"></i> <span data-i18n="layout.title">Bố cục không gian</span></h2>
+      <button type="button" class="btn btn-icon modal-close" data-i18n-aria-label="common.close" aria-label="Đóng"><i data-lucide="x"></i></button>
+    </header>
+    <p class="layout-section-label" data-i18n="layout.presets">Bố cục có sẵn</p>
+    <div class="layout-preset-grid" id="layoutPresetGrid"></div>
+    <div class="layout-custom-panel" id="layoutCustomPanel">
+      <p class="layout-section-label" data-i18n="layout.customTitle">Tùy chỉnh widget</p>
+      <p class="layout-custom-hint" data-i18n="layout.customHint">Chọn widget ghim trên màn hình và vị trí</p>
+      <div class="layout-custom-form" id="layoutCustomForm"></div>
+      <button type="button" class="btn btn-block btn-with-icon" id="layoutApplyCustom">
+        <i data-lucide="check"></i><span data-i18n="layout.applyCustom">Áp dụng</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ========== GALLERY ========== -->
   <div class="gallery-backdrop" id="galleryBackdrop"></div>
-  <section class="gallery-panel" id="galleryPanel" role="dialog" aria-label="Chọn nền" hidden>
+  <section class="gallery-panel" id="galleryPanel" role="dialog" data-i18n-aria-label="gallery.title" aria-label="Chọn nền" hidden>
     <header class="gallery-top">
-      <button type="button" class="gallery-icon-btn" id="galleryClose" aria-label="Đóng">
+      <button type="button" class="gallery-icon-btn" id="galleryClose" data-i18n-aria-label="common.close" aria-label="Đóng">
         <i data-lucide="x"></i>
       </button>
-      <h2 class="gallery-top-title">Chọn nền</h2>
+      <h2 class="gallery-top-title" data-i18n="gallery.title">Chọn nền</h2>
       <div class="gallery-jump">
         <label class="gallery-jump-label" for="gallerySearch">#</label>
-        <input type="text" class="gallery-jump-input" id="gallerySearch" placeholder="Số" inputmode="numeric" autocomplete="off" />
-        <button type="button" class="gallery-jump-go" id="galleryJumpBtn">Đi</button>
+        <input type="text" class="gallery-jump-input" id="gallerySearch" data-i18n-placeholder="gallery.numberPlaceholder" placeholder="Số" inputmode="numeric" autocomplete="off" />
+        <button type="button" class="gallery-jump-go" id="galleryJumpBtn" data-i18n="gallery.go">Đi</button>
       </div>
     </header>
 
     <div class="gallery-stage" id="galleryStage">
-      <button type="button" class="gallery-nav gallery-nav--prev" id="galleryPrev" aria-label="Ảnh trước">
+      <button type="button" class="gallery-nav gallery-nav--prev" id="galleryPrev" data-i18n-aria-label="scene.bgPrev" aria-label="Ảnh trước">
         <i data-lucide="chevron-left"></i>
       </button>
       <div class="gallery-viewport" id="galleryViewport">
         <img class="gallery-fill" id="galleryPreviewFill" alt="" aria-hidden="true" />
         <img class="gallery-frame" id="galleryPreviewImg" alt="" />
       </div>
-      <button type="button" class="gallery-nav gallery-nav--next" id="galleryNext" aria-label="Ảnh sau">
+      <button type="button" class="gallery-nav gallery-nav--next" id="galleryNext" data-i18n-aria-label="scene.bgNext" aria-label="Ảnh sau">
         <i data-lucide="chevron-right"></i>
       </button>
     </div>
@@ -216,16 +252,22 @@
     <footer class="gallery-footer">
       <span class="gallery-counter" id="galleryPreviewMeta">1 / 102</span>
       <button type="button" class="gallery-btn gallery-btn--ghost" id="galleryRandom">
-        <i data-lucide="shuffle"></i><span>Ngẫu nhiên</span>
+        <i data-lucide="shuffle"></i><span data-i18n="gallery.random">Ngẫu nhiên</span>
       </button>
       <button type="button" class="gallery-btn gallery-btn--primary" id="galleryApply">
-        <i data-lucide="check"></i><span>Chọn nền</span>
+        <i data-lucide="check"></i><span data-i18n="gallery.apply">Chọn nền</span>
       </button>
     </footer>
   </section>
 
+  <div id="toastStack" class="toast-stack" aria-live="polite" aria-relevant="additions"></div>
+
   <script src="node_modules/lucide/dist/umd/lucide.min.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/mobile.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/layout.js"></script>
 </body>
 </html>

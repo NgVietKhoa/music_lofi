@@ -6,6 +6,9 @@ const CLOUDINARY = {
     /* f_auto → WebP/AVIF tĩnh trên nhiều mobile; f_gif giữ animation */
     bg: "w_1920,c_limit,f_gif,q_auto",
     bgMobile: "w_1280,c_limit,f_gif,q_auto",
+    /* Lớp blur — nhỏ hơn vì đã bị làm mờ */
+    bgFill: "w_960,c_limit,f_gif,q_auto",
+    bgFillMobile: "w_640,c_limit,f_gif,q_auto",
     thumb: "w_220,h_220,c_fill,f_gif,q_90"
   }
 };
@@ -39,6 +42,13 @@ function cloudinaryBgUrl(index) {
   const transform = isMobileBgViewport()
     ? CLOUDINARY.transforms.bgMobile
     : CLOUDINARY.transforms.bg;
+  return cloudinaryUrl(CLOUDINARY_PUBLIC_IDS[index], transform);
+}
+
+function cloudinaryBgFillUrl(index) {
+  const transform = isMobileBgViewport()
+    ? CLOUDINARY.transforms.bgFillMobile
+    : CLOUDINARY.transforms.bgFill;
   return cloudinaryUrl(CLOUDINARY_PUBLIC_IDS[index], transform);
 }
 

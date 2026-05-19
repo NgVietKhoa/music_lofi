@@ -23,6 +23,11 @@ const STORAGE_KEY = "lofiChill_v1";
 
 /* ========== STATE ========== */
 const state = {
+  lang: "vi",
+  layout: {
+    preset: "minimal",
+    custom: { modalClock: null, modalMusic: null, modalPomo: null }
+  },
   bgIndex: 0,
   bgLayerA: true,
   theme: "day",
@@ -78,7 +83,58 @@ const ytSearchState = {
 
 let activeWidgetModal = null;
 let bgTransitionToken = 0;
+let pendingBgToast = false;
+let uiRefreshTimer = null;
 const modalBackdrop = $("#modalBackdrop");
+
+/** Cache URL đã tải — preload bằng Image() để chuyển nền không khựng */
+const bgUrlReady = new Set();
+const bgImageCache = new Map();
+const BG_CACHE_MAX = 20;
+
+function trimBgCache() {
+  while (bgImageCache.size > BG_CACHE_MAX) {
+    const oldest = bgImageCache.keys().next().value;
+    bgImageCache.delete(oldest);
+    bgUrlReady.delete(oldest);
+  }
+}
+
+function preloadBgUrl(url) {
+  if (!url) return Promise.resolve();
+  if (bgUrlReady.has(url)) return Promise.resolve();
+  let pending = bgImageCache.get(url);
+  if (pending) return pending;
+  pending = new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => {
+      bgUrlReady.add(url);
+      resolve();
+    };
+    img.onerror = () => resolve();
+    img.src = url;
+  });
+  bgImageCache.set(url, pending);
+  trimBgCache();
+  return pending;
+}
+
+function preloadBgIndex(index) {
+  const count = getBackgroundCount();
+  if (!count) return;
+  index = ((index % count) + count) % count;
+  preloadBgUrl(bgPath(index));
+  preloadBgUrl(bgFillPath(index));
+  preloadBgUrl(thumbPath(index));
+}
+
+function preloadBgNeighbors(index) {
+  const count = getBackgroundCount();
+  if (count <= 1) return;
+  preloadBgIndex((index + 1) % count);
+  preloadBgIndex((index - 1 + count) % count);
+}
 
 /* ========== LOCAL STORAGE ========== */
 function loadStorage() {
@@ -89,6 +145,7 @@ function loadStorage() {
     if (typeof data.bgIndex === "number" && data.bgIndex >= 0 && data.bgIndex < getBackgroundCount()) {
       state.bgIndex = data.bgIndex;
     }
+    if (data.lang === "vi" || data.lang === "en") state.lang = data.lang;
     if (data.theme === "day" || data.theme === "night") state.theme = data.theme;
     if (data.pomo) {
       Object.assign(state.pomo, data.pomo);
@@ -97,11 +154,14 @@ function loadStorage() {
     if (Array.isArray(data.playlist)) {
       state.playlist = data.playlist.filter((t) => t && t.videoId);
     }
+    if (typeof loadLayoutFromStorage === "function") loadLayoutFromStorage(data);
   } catch (_) { /* ignore corrupt storage */ }
 }
 
 function saveStorage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    lang: state.lang,
+    layout: typeof layoutStoragePayload === "function" ? layoutStoragePayload() : state.layout,
     bgIndex: state.bgIndex,
     theme: state.theme,
     pomo: {
@@ -123,12 +183,19 @@ function bgPath(index) {
   return cloudinaryBgUrl(index);
 }
 
+function bgFillPath(index) {
+  return cloudinaryBgFillUrl(index);
+}
+
 function thumbPath(index) {
   return cloudinaryThumbUrl(index);
 }
 
 function updateBgLabel() {
-  bgLabel.textContent = `bg ${state.bgIndex + 1} / ${getBackgroundCount()}`;
+  bgLabel.textContent = t("scene.bgCount", {
+    current: state.bgIndex + 1,
+    total: getBackgroundCount()
+  });
 }
 
 function clearBgInlineStyles(img) {
@@ -138,12 +205,29 @@ function clearBgInlineStyles(img) {
   img.style.transform = "";
 }
 
+function applyBgToStack(main, fill, mainSrc, fillSrc) {
+  clearBgInlineStyles(main);
+  main.src = mainSrc;
+  if (fill) fill.src = fillSrc || mainSrc;
+}
+
+async function paintBgStack(main, fill, mainSrc, fillSrc) {
+  applyBgToStack(main, fill, mainSrc, fillSrc);
+  if (main.decode) {
+    try {
+      await main.decode();
+    } catch (_) { /* ignore */ }
+  }
+}
+
 function setBackground(index, skipFade) {
   const count = getBackgroundCount();
   index = ((index % count) + count) % count;
   state.bgIndex = index;
 
-  const src = bgPath(index);
+  const fullSrc = bgPath(index);
+  const fillSrc = bgFillPath(index);
+  const thumbSrc = thumbPath(index);
   const showA = state.bgLayerA;
   const incomingStack = showA ? bgStackB : bgStackA;
   const outgoingStack = showA ? bgStackA : bgStackB;
@@ -151,13 +235,7 @@ function setBackground(index, skipFade) {
   const incomingFill = showA ? bgBFill : bgAFill;
   const token = ++bgTransitionToken;
 
-  incomingMain.alt = `Background ${index + 1}`;
-
-  const applySrc = () => {
-    clearBgInlineStyles(incomingMain);
-    incomingMain.src = src;
-    if (incomingFill) incomingFill.src = src;
-  };
+  incomingMain.alt = t("scene.bgAlt", { n: index + 1 });
 
   const commitTransition = () => {
     if (token !== bgTransitionToken) return;
@@ -168,46 +246,83 @@ function setBackground(index, skipFade) {
     saveStorage();
   };
 
-  const loadIncoming = () => {
-    incomingMain.onload = null;
-    incomingMain.onerror = null;
+  const upgradeToFull = async () => {
+    if (token !== bgTransitionToken) return;
+    if (incomingMain.getAttribute("src") === fullSrc) return;
+    await preloadBgUrl(fullSrc);
+    if (token !== bgTransitionToken) return;
+    await paintBgStack(incomingMain, incomingFill, fullSrc, fillSrc);
+  };
 
-    if (incomingMain.getAttribute("src") === src && incomingMain.complete && incomingMain.naturalWidth > 0) {
-      commitTransition();
-      return;
-    }
-
-    incomingMain.onload = () => {
-      if (token !== bgTransitionToken) return;
-      commitTransition();
-    };
-    incomingMain.onerror = () => {
-      if (token !== bgTransitionToken) return;
-      commitTransition();
-    };
-    applySrc();
-    if (incomingMain.complete && incomingMain.naturalWidth > 0) {
-      incomingMain.onload = null;
-      incomingMain.onerror = null;
-      commitTransition();
+  const finishSwitch = () => {
+    commitTransition();
+    preloadBgNeighbors(index);
+    if (pendingBgToast) {
+      pendingBgToast = false;
+      toastKey("toast.wallpaper", {
+        current: state.bgIndex + 1,
+        total: getBackgroundCount()
+      }, "success");
     }
   };
 
+  const runFade = async () => {
+    if (bgUrlReady.has(fullSrc)) {
+      await paintBgStack(incomingMain, incomingFill, fullSrc, fillSrc);
+      if (token !== bgTransitionToken) return;
+      finishSwitch();
+      return;
+    }
+
+    const fullPreload = preloadBgUrl(fullSrc);
+    await preloadBgUrl(thumbSrc);
+    if (token !== bgTransitionToken) return;
+
+    if (bgUrlReady.has(fullSrc)) {
+      await paintBgStack(incomingMain, incomingFill, fullSrc, fillSrc);
+    } else {
+      await paintBgStack(incomingMain, incomingFill, thumbSrc, thumbSrc);
+    }
+    if (token !== bgTransitionToken) return;
+    finishSwitch();
+
+    await fullPreload;
+    upgradeToFull();
+  };
+
   if (skipFade) {
-    applySrc();
+    applyBgToStack(incomingMain, incomingFill, fullSrc, fillSrc);
     commitTransition();
-  } else {
-    loadIncoming();
+    preloadBgNeighbors(index);
+    preloadBgUrl(fullSrc);
+    preloadBgUrl(fillSrc);
+    if (pendingBgToast) {
+      pendingBgToast = false;
+      toastKey("toast.wallpaper", {
+        current: state.bgIndex + 1,
+        total: getBackgroundCount()
+      }, "success");
+    }
+    return;
   }
+
+  runFade();
 }
 
-function bgNext() { setBackground(state.bgIndex + 1); }
-function bgPrev() { setBackground(state.bgIndex - 1); }
+function bgNext() {
+  pendingBgToast = true;
+  setBackground(state.bgIndex + 1);
+}
+function bgPrev() {
+  pendingBgToast = true;
+  setBackground(state.bgIndex - 1);
+}
 function bgShuffle() {
   let next;
   const count = getBackgroundCount();
   do { next = Math.floor(Math.random() * count); }
   while (next === state.bgIndex && count > 1);
+  pendingBgToast = true;
   setBackground(next);
 }
 
@@ -215,26 +330,49 @@ function bgShuffle() {
 function applyTheme() {
   document.body.classList.toggle("night", state.theme === "night");
   setIcon($("#themeToggle"), state.theme === "night" ? "moon" : "sun");
-  $("#themeToggle").title = state.theme === "night" ? "Night" : "Day";
+  $("#themeToggle").title = state.theme === "night" ? t("theme.night") : t("theme.day");
   saveStorage();
 }
 
-/* ========== MOBILE LANDSCAPE ONLY ========== */
-const mobilePortraitMq = window.matchMedia("(max-width: 900px) and (orientation: portrait)");
-
-function isMobilePortrait() {
-  return mobilePortraitMq.matches;
-}
-
+/* ========== MOBILE (see js/mobile.js) ========== */
 function syncMobileOrientation() {
-  if (isMobilePortrait()) closeAllOverlays();
+  syncMobileBodyClasses?.();
+  if (typeof applyLayout === "function") applyLayout();
 }
 
 /* ========== WIDGET MODALS ========== */
 function openWidgetModal(modalId, dockBtn) {
-  if (isMobilePortrait()) return;
   const modal = document.getElementById(modalId);
   if (!modal) return;
+
+  if (
+    modalId === "modalLayout" &&
+    typeof isMobileViewport === "function" &&
+    isMobileViewport()
+  ) {
+    return;
+  }
+
+  if (modal.classList.contains("layout-pinned")) {
+    if (modal.classList.contains("layout-expanded")) {
+      collapseLayoutExpanded?.();
+      return;
+    }
+    document.querySelectorAll(".widget-modal").forEach((m) => {
+      if (m !== modal) {
+        m.classList.remove("open", "layout-expanded");
+        if (!m.classList.contains("layout-pinned")) m.setAttribute("hidden", "");
+      }
+    });
+    activeWidgetModal = modalId;
+    modal.classList.add("open", "layout-expanded");
+    modal.removeAttribute("hidden");
+    modalBackdrop.classList.add("open");
+    modalBackdrop.setAttribute("aria-hidden", "false");
+    document.querySelectorAll(".dock-btn[data-modal]").forEach((b) => b.classList.remove("active"));
+    dockBtn?.classList.add("active");
+    return;
+  }
 
   if (activeWidgetModal === modalId) {
     closeWidgetModals();
@@ -247,17 +385,22 @@ function openWidgetModal(modalId, dockBtn) {
   modal.classList.add("open");
   modalBackdrop.classList.add("open");
   modalBackdrop.setAttribute("aria-hidden", "false");
+  setMobileModalLock?.(true);
   document.querySelectorAll(".dock-btn[data-modal]").forEach((b) => b.classList.remove("active"));
   dockBtn?.classList.add("active");
+  if (modalId === "modalLayout" && typeof renderLayoutPicker === "function") renderLayoutPicker();
 }
 
 function closeWidgetModals() {
   activeWidgetModal = null;
   modalBackdrop.classList.remove("open");
   modalBackdrop.setAttribute("aria-hidden", "true");
+  setMobileModalLock?.(false);
   document.querySelectorAll(".widget-modal").forEach((m) => {
-    m.classList.remove("open");
-    m.setAttribute("hidden", "");
+    m.classList.remove("open", "layout-expanded");
+    if (!m.classList.contains("layout-pinned")) {
+      m.setAttribute("hidden", "");
+    }
   });
   document.querySelectorAll(".dock-btn[data-modal]").forEach((b) => b.classList.remove("active"));
 }
@@ -267,9 +410,45 @@ function closeAllOverlays() {
   closeWidgetModals();
 }
 
+function scheduleUiRefresh() {
+  clearTimeout(uiRefreshTimer);
+  uiRefreshTimer = setTimeout(() => {
+    uiRefreshTimer = null;
+    refreshUiOnLangChange();
+  }, 160);
+}
+
 function toggleTheme() {
   state.theme = state.theme === "day" ? "night" : "day";
   applyTheme();
+  scheduleUiRefresh();
+  toastKey(state.theme === "night" ? "toast.themeNight" : "toast.themeDay", null, "info");
+}
+
+function switchLanguage() {
+  state.lang = toggleLang();
+  saveStorage();
+  scheduleUiRefresh();
+  toastKey(state.lang === "vi" ? "toast.langVi" : "toast.langEn", null, "info");
+}
+
+function refreshUiOnLangChange() {
+  updateBgLabel();
+  applyTheme();
+  updateRepeatIcon();
+  updateClock();
+  renderPlaylist();
+  if (state.currentTrack < 0) {
+    setTrackDisplay(t("music.noTrack"), "", false);
+  }
+  if (!ytSearchState.query) {
+    setSearchResultsIdle();
+  } else if (ytSearchState.items.length) {
+    const body = getSearchResultsBody();
+    body.querySelector(".yt-search-loading-more, .yt-search-hint, .yt-search-hint--end")?.remove();
+    body.insertAdjacentHTML("beforeend", youtubeResultsFooterHtml());
+  }
+  refreshIcons();
 }
 
 /* ========== GALLERY — wallpaper picker ========== */
@@ -292,15 +471,24 @@ function updateGalleryPreview(index) {
   index = ((index % count) + count) % count;
   galleryPickIndex = index;
 
-  const src = bgPath(index);
+  const thumb = thumbPath(index);
+  const full = bgPath(index);
+  preloadBgUrl(full);
+
+  const showThumb = () => {
+    if (galleryPickIndex !== index) return;
+    if (galleryPreviewImg) {
+      galleryPreviewImg.classList.remove("is-switching");
+      galleryPreviewImg.src = thumb;
+      galleryPreviewImg.alt = t("scene.bgAlt", { n: index + 1 });
+    }
+    if (galleryPreviewFill) galleryPreviewFill.src = thumb;
+  };
+
   if (galleryPreviewImg) {
     galleryPreviewImg.classList.add("is-switching");
-    galleryPreviewImg.onload = () => galleryPreviewImg.classList.remove("is-switching");
-    galleryPreviewImg.onerror = () => galleryPreviewImg.classList.remove("is-switching");
-    galleryPreviewImg.src = src;
-    galleryPreviewImg.alt = `Background ${index + 1}`;
+    preloadBgUrl(thumb).then(showThumb);
   }
-  if (galleryPreviewFill) galleryPreviewFill.src = src;
   if (galleryPreviewMeta) {
     galleryPreviewMeta.textContent = `${index + 1} / ${count}`;
   }
@@ -317,7 +505,11 @@ function galleryStep(delta) {
 function galleryJumpFromInput() {
   const raw = gallerySearch.value.trim().replace("#", "");
   const num = parseInt(raw, 10);
-  if (!Number.isFinite(num) || num < 1) return;
+  const count = getBackgroundCount();
+  if (!Number.isFinite(num) || num < 1 || num > count) {
+    toastKey("toast.galleryInvalid", null, "warn");
+    return;
+  }
   updateGalleryPreview(num - 1);
 }
 
@@ -333,6 +525,7 @@ function galleryPickRandom() {
 
 function applyGalleryPick() {
   if (galleryPickIndex < 0) return;
+  pendingBgToast = true;
   setBackground(galleryPickIndex);
   closeGallery();
 }
@@ -373,10 +566,10 @@ function bindGallerySwipe() {
 }
 
 function openGallery() {
-  if (isMobilePortrait()) return;
   $("#galleryPanel").removeAttribute("hidden");
   $("#galleryBackdrop").classList.add("open");
   $("#galleryPanel").classList.add("open");
+  setMobileModalLock?.(true);
   gallerySearch.value = "";
   updateGalleryPreview(state.bgIndex);
   refreshIcons();
@@ -386,6 +579,7 @@ function closeGallery() {
   $("#galleryBackdrop").classList.remove("open");
   $("#galleryPanel").classList.remove("open");
   $("#galleryPanel").setAttribute("hidden", "");
+  if (!activeWidgetModal) setMobileModalLock?.(false);
 }
 
 
@@ -399,7 +593,7 @@ function updateClock() {
   const s = now.getSeconds();
 
   $("#clockDigital").textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  $("#clockDate").textContent = now.toLocaleDateString("vi-VN", {
+  $("#clockDate").textContent = now.toLocaleDateString(getLocale(), {
     weekday: "long", day: "numeric", month: "long", year: "numeric"
   });
 
@@ -525,6 +719,7 @@ function addYouTubeTrack(item) {
   saveStorage();
   renderPlaylist();
   playTrack(state.playlist.length - 1);
+  toastKey("toast.trackAdded", null, "success");
 }
 
 async function searchYouTube(query, continuation) {
@@ -538,12 +733,12 @@ async function searchYouTube(query, continuation) {
     res = await fetch(url, { signal: ytSearchAbort.signal });
   } catch (err) {
     if (err.name === "AbortError") throw err;
-    throw new Error("Không kết nối server — chạy: npm start");
+    throw new Error(t("errors.noServer"));
   }
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(body.error || "Tìm kiếm thất bại");
+    throw new Error(body.error || t("music.searchFailed"));
   }
   return body;
 }
@@ -561,9 +756,9 @@ function youtubeResultHtml(item) {
 }
 
 function youtubeResultsFooterHtml() {
-  if (ytSearchState.loadingMore) return '<p class="yt-search-loading-more">Đang tải thêm...</p>';
-  if (ytSearchState.hasMore) return '<p class="yt-search-hint">Cuộn xuống để tải thêm</p>';
-  if (ytSearchState.items.length) return '<p class="yt-search-hint yt-search-hint--end">Đã hết kết quả</p>';
+  if (ytSearchState.loadingMore) return `<p class="yt-search-loading-more">${t("music.loadingMore")}</p>`;
+  if (ytSearchState.hasMore) return `<p class="yt-search-hint">${t("music.scrollMore")}</p>`;
+  if (ytSearchState.items.length) return `<p class="yt-search-hint yt-search-hint--end">${t("music.noMoreResults")}</p>`;
   return "";
 }
 
@@ -614,7 +809,7 @@ function setSearchResultsIdle() {
   ytSearchState.items = [];
   ytSearchState.hasMore = false;
   ytSearchState.continuation = null;
-  setSearchResultsHtml('<p class="yt-search-idle">Nhập từ khóa để tìm</p>');
+  setSearchResultsHtml(`<p class="yt-search-idle">${t("music.searchIdle")}</p>`);
 }
 
 async function renderYouTubeResults(items, { append = false } = {}) {
@@ -625,7 +820,7 @@ async function renderYouTubeResults(items, { append = false } = {}) {
   if (!append) {
     ytSearchState.items = items;
     if (!items.length) {
-      await setSearchResultsHtml('<p class="yt-search-empty">Không có kết quả</p>', { animate: true });
+      await setSearchResultsHtml(`<p class="yt-search-empty">${t("music.noResults")}</p>`, { animate: true });
       return;
     }
     const html = items.map(youtubeResultHtml).join("") + youtubeResultsFooterHtml();
@@ -653,8 +848,8 @@ async function loadMoreYouTubeResults() {
   ytSearchState.loadingMore = true;
   const body = getSearchResultsBody();
   const footer = body.querySelector(".yt-search-hint, .yt-search-loading-more");
-  if (footer) footer.textContent = "Đang tải thêm...";
-  else body.insertAdjacentHTML("beforeend", '<p class="yt-search-loading-more">Đang tải thêm...</p>');
+  if (footer) footer.textContent = t("music.loadingMore");
+  else body.insertAdjacentHTML("beforeend", `<p class="yt-search-loading-more">${t("music.loadingMore")}</p>`);
 
   try {
     const data = await searchYouTube(ytSearchState.query, ytSearchState.continuation);
@@ -701,10 +896,9 @@ async function runYouTubeSearch() {
   } catch (err) {
     if (err.name === "AbortError") return;
     ytSearchResults.classList.remove("is-loading", "is-populated");
-    await setSearchResultsHtml(
-      `<p class="yt-search-empty">${escapeHtml(err.message)} — chạy <code>npm start</code></p>`,
-      { animate: true }
-    );
+    const errHtml = `<p class="yt-search-empty">${escapeHtml(err.message)} — ${t("music.npmHint")}</p>`;
+    await setSearchResultsHtml(errHtml, { animate: true });
+    showToast(err.message, "error", 4000);
   }
 }
 
@@ -751,7 +945,7 @@ function setVinylArt(track) {
     vinylArt.classList.remove("is-swapping");
     vinyl.classList.remove("has-art");
   };
-  vinylArt.alt = track.name || "Ảnh bài hát";
+  vinylArt.alt = track.name || t("music.trackArtAlt");
   vinylArt.src = url;
   vinylArt.dataset.current = url;
 }
@@ -764,7 +958,7 @@ function updateVinyl() {
 function renderPlaylist() {
   playlistEl.innerHTML = "";
   if (!state.playlist.length) {
-    playlistEl.innerHTML = '<p class="playlist-empty">Playlist trống — tìm nhạc YouTube ở trên</p>';
+    playlistEl.innerHTML = `<p class="playlist-empty">${t("music.playlistEmpty")}</p>`;
     return;
   }
   state.playlist.forEach((track, i) => {
@@ -794,12 +988,13 @@ function removeTrack(index) {
     if (ytPlayer?.stopVideo) ytPlayer.stopVideo();
     stopYtProgressPoll();
     state.isPlaying = false;
-    setTrackDisplay("Chưa có bài hát", "", false);
+    setTrackDisplay(t("music.noTrack"), "", false);
     setVinylArt(null);
     updateVinyl();
     setIcon($("#musicPlay"), "play");
   }
   renderPlaylist();
+  toastKey("toast.trackRemoved", null, "info");
 }
 
 function setTrackDisplay(title, meta, isError) {
@@ -813,14 +1008,15 @@ async function loadTrack(index, autoplay) {
   ytPendingAutoplay = !!autoplay;
   state.currentTrack = index;
   const track = state.playlist[index];
-  setTrackDisplay("Đang tải...", track.author, false);
+  setTrackDisplay(t("music.loading"), track.author, false);
   setVinylArt(track);
   renderPlaylist();
 
   try {
     await loadYoutubeApi();
   } catch {
-    setTrackDisplay("Không tải được player", "Kiểm tra mạng", true);
+    setTrackDisplay(t("music.playerLoadFailed"), t("music.checkNetwork"), true);
+    showToast(t("music.playerLoadFailed"), "error", 4000);
     return;
   }
 
@@ -852,7 +1048,9 @@ async function loadTrack(index, autoplay) {
           },
           onStateChange: onYtStateChange,
           onError: (e) => {
-            setTrackDisplay("Không phát được", `Lỗi YouTube #${e.data}`, true);
+            const errMsg = t("music.youtubeError", { code: e.data });
+            setTrackDisplay(t("music.playFailed"), errMsg, true);
+            showToast(t("music.playFailed"), "error", 4000);
           }
         }
       });
@@ -898,7 +1096,10 @@ function getPrevIndex() {
 }
 
 function musicPlayPause() {
-  if (!state.playlist.length) return;
+  if (!state.playlist.length) {
+    toastKey("toast.noPlaylist", null, "warn");
+    return;
+  }
   if (state.currentTrack < 0) {
     playTrack(0);
     return;
@@ -909,12 +1110,17 @@ function musicPlayPause() {
   else ytPlayer.playVideo();
 }
 
+function getRepeatLabel(mode) {
+  const keys = { off: "music.repeatOff", one: "music.repeatOne", all: "music.repeatAll" };
+  return t(keys[mode] || keys.off);
+}
+
 function updateRepeatIcon() {
   const btn = $("#musicRepeat");
   const iconName = state.repeatMode === "one" ? "repeat-1" : "repeat";
   setIcon(btn, iconName);
   btn.classList.toggle("active-mode", state.repeatMode !== "off");
-  btn.title = `Repeat: ${state.repeatMode}`;
+  btn.title = t("music.repeatTitle", { mode: getRepeatLabel(state.repeatMode) });
 }
 
 function cycleRepeat() {
@@ -922,6 +1128,7 @@ function cycleRepeat() {
   const i = modes.indexOf(state.repeatMode);
   state.repeatMode = modes[(i + 1) % modes.length];
   updateRepeatIcon();
+  toastKey("toast.repeat", { mode: getRepeatLabel(state.repeatMode) }, "info");
 }
 
 function seekFromEvent(e) {
@@ -1036,6 +1243,7 @@ function pomoTick() {
     state.pomo.running = false;
     state.pomo.secondsLeft = 0;
     setPomoInputsDisabled(false);
+    toastKey("toast.pomoDone", null, "success", 4500);
   } else {
     state.pomo.secondsLeft--;
   }
@@ -1050,13 +1258,21 @@ function bindEvents() {
   });
   modalBackdrop.addEventListener("click", closeWidgetModals);
   document.querySelectorAll(".modal-close").forEach((btn) => {
-    btn.addEventListener("click", closeWidgetModals);
+    btn.addEventListener("click", () => {
+      const modal = btn.closest(".widget-modal");
+      if (modal?.classList.contains("layout-pinned") && modal.classList.contains("layout-expanded")) {
+        collapseLayoutExpanded?.();
+        return;
+      }
+      closeWidgetModals();
+    });
   });
 
   $("#bgPrev").addEventListener("click", bgPrev);
   $("#bgNext").addEventListener("click", bgNext);
   $("#bgShuffle").addEventListener("click", bgShuffle);
   $("#themeToggle").addEventListener("click", toggleTheme);
+  $("#langToggle").addEventListener("click", switchLanguage);
   $("#galleryOpen").addEventListener("click", openGallery);
   $("#galleryClose").addEventListener("click", closeGallery);
   $("#galleryBackdrop").addEventListener("click", closeGallery);
@@ -1095,6 +1311,7 @@ function bindEvents() {
   $("#musicShuffle").addEventListener("click", () => {
     state.musicShuffle = !state.musicShuffle;
     $("#musicShuffle").classList.toggle("active-mode", state.musicShuffle);
+    toastKey(state.musicShuffle ? "toast.shuffleOn" : "toast.shuffleOff", null, "info");
   });
   $("#musicRepeat").addEventListener("click", cycleRepeat);
 
@@ -1119,19 +1336,27 @@ function bindEvents() {
     state.pomo.running = true;
     setPomoInputsDisabled(true);
     saveStorage();
+    toastKey("toast.pomoStarted", null, "success");
   });
   $("#pomoPause").addEventListener("click", () => {
     state.pomo.running = false;
     setPomoInputsDisabled(false);
     saveStorage();
+    toastKey("toast.pomoPaused", null, "info");
   });
   $("#pomoReset").addEventListener("click", () => {
     pomoReset();
     setPomoInputsDisabled(false);
+    toastKey("toast.pomoReset", null, "info");
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeAllOverlays();
+    if (e.key !== "Escape") return;
+    if (document.querySelector(".widget-modal.layout-expanded")) {
+      collapseLayoutExpanded?.();
+      return;
+    }
+    closeAllOverlays();
   });
 }
 
@@ -1154,12 +1379,38 @@ async function checkMusicServer() {
   }
 }
 
+const APP_LOADING_MIN_MS = 400;
+
+function waitMs(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForActiveBgPaint() {
+  const main = state.bgLayerA ? bgA : bgB;
+  const fill = state.bgLayerA ? bgAFill : bgBFill;
+  if (!main?.src) return;
+  await paintBgStack(main, fill, main.src, fill?.src || main.src);
+}
+
+async function hideAppLoading() {
+  const el = document.getElementById("appLoading");
+  document.body.classList.remove("is-app-loading");
+  if (!el) return;
+  el.classList.add("is-hiding");
+  el.setAttribute("aria-busy", "false");
+  await waitMs(460);
+  el.remove();
+}
+
 async function init() {
+  const loadingStarted = performance.now();
+
   try {
     await loadCloudinaryIds();
   } catch (err) {
     console.error(err);
-    bgLabel.textContent = "Lỗi tải ảnh Cloudinary";
+    bgLabel.textContent = t("errors.cloudinary");
+    showToast(t("errors.cloudinary"), "error", 5000);
     return;
   }
 
@@ -1167,6 +1418,9 @@ async function init() {
   loadYoutubeApi().catch(() => {});
 
   loadStorage();
+  initI18n(state.lang);
+  if (typeof initLayoutFromStorage === "function") initLayoutFromStorage();
+  if (typeof bindLayoutApplyCustom === "function") bindLayoutApplyCustom();
   applyTheme();
   syncYtVolume();
 
@@ -1175,7 +1429,11 @@ async function init() {
   state.bgLayerA = true;
   clearBgInlineStyles(bgA);
   clearBgInlineStyles(bgB);
+  await preloadBgUrl(bgPath(state.bgIndex));
+  await preloadBgUrl(bgFillPath(state.bgIndex));
   setBackground(state.bgIndex, true);
+  await waitForActiveBgPaint();
+  preloadBgNeighbors(state.bgIndex);
 
   updateClock();
   setInterval(updateClock, 1000);
@@ -1188,11 +1446,12 @@ async function init() {
 
   renderPlaylist();
   updateRepeatIcon();
+  if (state.currentTrack < 0) setTrackDisplay(t("music.noTrack"), "", false);
   refreshIcons();
   bindEvents();
 
+  initMobile?.();
   syncMobileOrientation();
-  mobilePortraitMq.addEventListener("change", syncMobileOrientation);
   window.addEventListener("orientationchange", syncMobileOrientation);
 
   let bgViewportMobile = isMobileBgViewport();
@@ -1200,8 +1459,24 @@ async function init() {
     const mobile = isMobileBgViewport();
     if (mobile === bgViewportMobile) return;
     bgViewportMobile = mobile;
+    bgUrlReady.clear();
+    bgImageCache.clear();
     setBackground(state.bgIndex, true);
+    preloadBgNeighbors(state.bgIndex);
   });
+
+  const elapsed = performance.now() - loadingStarted;
+  if (elapsed < APP_LOADING_MIN_MS) await waitMs(APP_LOADING_MIN_MS - elapsed);
 }
 
-init();
+async function boot() {
+  try {
+    await init();
+  } catch (err) {
+    console.error(err);
+  } finally {
+    await hideAppLoading();
+  }
+}
+
+boot();
