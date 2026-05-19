@@ -5,7 +5,7 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 60,
-      "includeFiles": "{index.html,css/**,js/**,assets/**,node_modules/lucide/dist/**}"
+      "includeFiles": "{index.html,css/**,js/**,lib/**,assets/**,node_modules/lucide/dist/**,node_modules/cloudinary/**}"
     }
   }
 }

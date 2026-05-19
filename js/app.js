@@ -495,7 +495,10 @@ function refreshUiOnLangChange() {
 }
 
 /* ========== GALLERY — wallpaper picker ========== */
+const galleryPanel = $("#galleryPanel");
 const galleryStage = $("#galleryStage");
+const galleryGrid = $("#galleryGrid");
+const galleryGridWrap = $("#galleryGridWrap");
 const gallerySearch = $("#gallerySearch");
 const galleryPreviewImg = $("#galleryPreviewImg");
 const galleryPreviewFill = $("#galleryPreviewFill");
@@ -506,8 +509,12 @@ const galleryPrev = $("#galleryPrev");
 const galleryNext = $("#galleryNext");
 const galleryRandom = $("#galleryRandom");
 const galleryJumpBtn = $("#galleryJumpBtn");
+const galleryViewToggle = $("#galleryViewToggle");
+const galleryViewToggleIcon = $("#galleryViewToggleIcon");
 let galleryPickIndex = -1;
 let gallerySwipeX = 0;
+let galleryGridBuiltCount = 0;
+let galleryViewMode = sessionStorage.getItem("galleryView") === "preview" ? "preview" : "grid";
 
 function updateGalleryPreview(index) {
   const count = getBackgroundCount();
@@ -538,6 +545,97 @@ function updateGalleryPreview(index) {
   if (galleryProgressFill) {
     galleryProgressFill.style.width = `${((index + 1) / count) * 100}%`;
   }
+  syncGalleryGridSelection();
+}
+
+function ensureGalleryGrid() {
+  const count = getBackgroundCount();
+  if (!galleryGrid || galleryGridBuiltCount === count) return;
+
+  galleryGrid.innerHTML = "";
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < count; i++) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "gallery-grid-item";
+    btn.dataset.index = String(i);
+    btn.setAttribute("role", "listitem");
+    btn.setAttribute("aria-label", t("scene.bgAlt", { n: i + 1 }));
+
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.src = thumbPath(i);
+    img.alt = "";
+
+    const num = document.createElement("span");
+    num.className = "gallery-grid-num";
+    num.textContent = String(i + 1);
+
+    btn.append(img, num);
+    btn.addEventListener("click", () => pickGalleryFromGrid(i));
+    frag.appendChild(btn);
+  }
+  galleryGrid.appendChild(frag);
+  galleryGridBuiltCount = count;
+}
+
+function syncGalleryGridSelection() {
+  if (!galleryGrid) return;
+  const sel = galleryPickIndex;
+  galleryGrid.querySelectorAll(".gallery-grid-item").forEach((el) => {
+    const idx = Number(el.dataset.index);
+    const on = idx === sel;
+    el.classList.toggle("is-selected", on);
+    el.setAttribute("aria-current", on ? "true" : "false");
+  });
+}
+
+function scrollGalleryGridToIndex(index) {
+  const el = galleryGrid?.querySelector(`.gallery-grid-item[data-index="${index}"]`);
+  el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
+function pickGalleryFromGrid(index) {
+  updateGalleryPreview(index);
+  pendingBgToast = true;
+  setBackground(index);
+  closeGallery();
+}
+
+function setGalleryView(mode, { persist = true } = {}) {
+  galleryViewMode = mode === "preview" ? "preview" : "grid";
+  if (persist) sessionStorage.setItem("galleryView", galleryViewMode);
+
+  galleryPanel?.classList.toggle("gallery-panel--grid", galleryViewMode === "grid");
+
+  if (galleryStage) galleryStage.hidden = galleryViewMode === "grid";
+  if (galleryGridWrap) galleryGridWrap.hidden = galleryViewMode !== "grid";
+
+  if (galleryViewToggle) {
+    const key = galleryViewMode === "grid" ? "gallery.viewPreview" : "gallery.viewGrid";
+    galleryViewToggle.title = t(key);
+    galleryViewToggle.setAttribute("data-i18n-title", key);
+  }
+  if (galleryViewToggleIcon) {
+    galleryViewToggleIcon.setAttribute(
+      "data-lucide",
+      galleryViewMode === "grid" ? "maximize-2" : "layout-grid"
+    );
+  }
+
+  if (galleryViewMode === "grid") {
+    ensureGalleryGrid();
+    syncGalleryGridSelection();
+    const idx = galleryPickIndex >= 0 ? galleryPickIndex : state.bgIndex;
+    requestAnimationFrame(() => scrollGalleryGridToIndex(idx));
+  }
+
+  refreshIcons();
+}
+
+function toggleGalleryView() {
+  setGalleryView(galleryViewMode === "grid" ? "preview" : "grid");
 }
 
 function galleryStep(delta) {
@@ -554,6 +652,7 @@ function galleryJumpFromInput() {
     return;
   }
   updateGalleryPreview(num - 1);
+  if (galleryViewMode === "grid") scrollGalleryGridToIndex(num - 1);
 }
 
 function galleryPickRandom() {
@@ -564,6 +663,7 @@ function galleryPickRandom() {
     next = Math.floor(Math.random() * count);
   } while (next === galleryPickIndex);
   updateGalleryPreview(next);
+  if (galleryViewMode === "grid") scrollGalleryGridToIndex(next);
 }
 
 function applyGalleryPick() {
@@ -574,8 +674,9 @@ function applyGalleryPick() {
 }
 
 function onGalleryKeydown(e) {
-  const panel = $("#galleryPanel");
+  const panel = galleryPanel;
   if (!panel?.classList.contains("open")) return;
+  if (galleryViewMode === "grid") return;
   if (e.key === "ArrowLeft") {
     e.preventDefault();
     galleryStep(-1);
@@ -609,11 +710,12 @@ function bindGallerySwipe() {
 }
 
 function openGallery() {
-  $("#galleryPanel").removeAttribute("hidden");
+  galleryPanel?.removeAttribute("hidden");
   $("#galleryBackdrop").classList.add("open");
-  $("#galleryPanel").classList.add("open");
+  galleryPanel?.classList.add("open");
   setMobileModalLock?.(true);
   gallerySearch.value = "";
+  setGalleryView(galleryViewMode, { persist: false });
   updateGalleryPreview(state.bgIndex);
   refreshIcons();
 }
@@ -1328,6 +1430,7 @@ function bindEvents() {
   galleryNext?.addEventListener("click", () => galleryStep(1));
   galleryRandom?.addEventListener("click", galleryPickRandom);
   galleryJumpBtn?.addEventListener("click", galleryJumpFromInput);
+  galleryViewToggle?.addEventListener("click", toggleGalleryView);
   gallerySearch?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -1409,11 +1512,28 @@ function bindEvents() {
 
 /* ========== INIT ========== */
 async function loadCloudinaryIds() {
-  const res = await fetch("js/cloudinary-ids.json");
-  if (!res.ok) throw new Error("Không tải được cloudinary-ids.json");
-  const ids = await res.json();
-  if (!Array.isArray(ids) || ids.length === 0) throw new Error("cloudinary-ids.json trống");
-  setCloudinaryPublicIds(ids);
+  if (location.protocol === "file:") {
+    throw new Error("Chạy npm start và mở http://localhost:8080 (cần server + CLOUDINARY_URL)");
+  }
+
+  const res = await fetch("/api/backgrounds");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const hint = body.hint ? ` — ${body.hint}` : "";
+    throw new Error((body.error || "API /api/backgrounds lỗi") + hint);
+  }
+  const data = await res.json();
+  if (!Array.isArray(data.ids) || data.ids.length === 0) {
+    throw new Error("Danh sách nền từ Cloudinary trống");
+  }
+
+  setCloudinaryPublicIds(data.ids);
+}
+
+function clampBgIndex() {
+  const count = getBackgroundCount();
+  if (!count) return;
+  state.bgIndex = ((state.bgIndex % count) + count) % count;
 }
 
 async function checkMusicServer() {
@@ -1465,6 +1585,7 @@ async function init() {
   loadYoutubeApi().catch(() => {});
 
   loadStorage();
+  clampBgIndex();
   initI18n(state.lang);
   if (typeof initLayoutFromStorage === "function") initLayoutFromStorage();
   if (typeof bindLayoutApplyCustom === "function") bindLayoutApplyCustom();

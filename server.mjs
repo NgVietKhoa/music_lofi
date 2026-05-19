@@ -1,14 +1,26 @@
 import express from "express";
 import cors from "cors";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { randomUUID } from "crypto";
 import { Innertube, Log } from "youtubei.js";
+import { getBackgroundPublicIds } from "./lib/cloudinary-backgrounds.mjs";
 
 Log.setLevel(Log.Level.NONE);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.VERCEL ? process.cwd() : __dirname;
+
+function loadDotEnv() {
+  if (process.env.CLOUDINARY_URL) return;
+  const envPath = path.join(ROOT, ".env");
+  if (!fs.existsSync(envPath)) return;
+  const line = fs.readFileSync(envPath, "utf8").match(/^CLOUDINARY_URL=(.+)$/m);
+  if (line) process.env.CLOUDINARY_URL = line[1].trim();
+}
+
+loadDotEnv();
 const PORT = Number(process.env.PORT) || 8080;
 const SESSION_TTL_MS = 10 * 60 * 1000;
 
@@ -59,6 +71,31 @@ app.get("/favicon.ico", (_req, res) => {
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+/** Danh sách public_id nền — lấy trực tiếp từ Cloudinary (cache server ~10 phút) */
+app.get("/api/backgrounds", async (req, res) => {
+  if (!process.env.CLOUDINARY_URL) {
+    return res.status(503).json({
+      error: "Chưa cấu hình CLOUDINARY_URL trên server",
+      hint: "Vercel: Settings → Environment Variables"
+    });
+  }
+
+  try {
+    const refresh = req.query.refresh === "1" || req.query.refresh === "true";
+    const payload = await getBackgroundPublicIds({ refresh });
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.json({
+      ids: payload.ids,
+      count: payload.ids.length,
+      folder: payload.folder,
+      cached: payload.cached
+    });
+  } catch (err) {
+    console.error("[backgrounds]", err.message);
+    res.status(500).json({ error: err.message || "Không tải được danh sách nền" });
+  }
 });
 
 /** Tìm kiếm YouTube — trang đầu hoặc tải thêm (?continuation=...) */

@@ -121,13 +121,13 @@ music_chill/
 ├── css/
 │   └── style.css           # Toàn bộ style (theme, music 3 cột, gallery…)
 ├── js/
-│   ├── app.js              # Logic ứng dụng (~1000 dòng)
-│   ├── config.js           # Cloudinary + YOUTUBE_API base path
-│   └── cloudinary-ids.json # Danh sách public_id nền (sync từ Cloudinary)
-├── server.mjs              # Express: static + API YouTube search
+│   ├── app.js              # Logic ứng dụng
+│   └── config.js           # Cloudinary + YOUTUBE_API base path
+├── lib/
+│   └── cloudinary-backgrounds.mjs  # Lấy danh sách public_id từ Cloudinary
+├── server.mjs              # Express: static + API nền + YouTube search
 ├── scripts/
-│   ├── fetch-cloudinary-ids.js  # Đồng bộ ID ảnh từ Cloudinary
-│   └── test-audio.mjs           # Script CLI thử stream (dev, không dùng production)
+│   └── test-audio.mjs      # Script CLI thử stream (dev)
 ├── package.json
 └── README.md
 ```
@@ -284,18 +284,20 @@ const YOUTUBE_API = "/api/youtube";  // Base path API (relative)
 
 ---
 
-## Đồng bộ nền Cloudinary
+## Nền Cloudinary (tự động)
 
-Khi thêm/xóa GIF trên Cloudinary folder `img_gif`, chạy:
+**Local và Vercel** đều dùng **`GET /api/backgrounds`** — danh sách lấy trực tiếp từ folder **`img_gif`** trên Cloudinary. **Chỉ cần upload ảnh lên Cloud**, không cần file JSON hay sửa code.
 
-```bash
-# Tạo file .env ở thư mục gốc:
-# CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
+**Local:**
 
-npm run sync:cloudinary
-```
+1. Tạo `.env` từ `.env.example`, điền `CLOUDINARY_URL`.
+2. `npm start` → mở `http://localhost:8080` (không mở `index.html` bằng `file://`).
 
-Script `scripts/fetch-cloudinary-ids.js` ghi danh sách `public_id` vào `js/cloudinary-ids.json` (sắp xếp theo số trong tên file).
+**Vercel:** Settings → Environment Variables → `CLOUDINARY_URL` (cùng giá trị như `.env`).
+
+- Server cache danh sách ~10 phút (`BG_LIST_CACHE_MS`).
+- Reload trang sau khi upload (hoặc đợi hết cache).
+- Ép làm mới: `GET /api/backgrounds?refresh=1`
 
 ---
 
@@ -314,6 +316,12 @@ Key: `lofiChill_v1` trong `localStorage`.
 ---
 
 ## Gỡ lỗi
+
+### Lỗi tải ảnh nền / “Lỗi tải ảnh Cloudinary”
+
+- Chạy `npm start`, mở `http://localhost:8080` (không `file://`).
+- File `.env` có `CLOUDINARY_URL` đúng (copy từ Cloudinary Dashboard).
+- Thử `http://localhost:8080/api/backgrounds` — phải trả JSON `{ count, ids }`.
 
 ### Không tìm được nhạc / lỗi mạng
 
@@ -355,8 +363,7 @@ npm start
 
 | Lệnh | Mô tả |
 |------|--------|
-| `npm start` | Chạy `node server.mjs` |
-| `npm run sync:cloudinary` | Đồng bộ `js/cloudinary-ids.json` từ Cloudinary |
+| `npm start` | Chạy `node server.mjs` (API nền + nhạc) |
 
 ---
 

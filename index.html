@@ -84,7 +84,7 @@
         <button type="button" class="btn btn-icon" id="bgShuffle" data-i18n-title="scene.shuffle" title="Ngẫu nhiên"><i data-lucide="shuffle"></i></button>
         <button type="button" class="btn btn-icon" id="bgNext" data-i18n-title="scene.bgNext" title="Ảnh sau"><i data-lucide="chevron-right"></i></button>
       </div>
-      <p class="bg-label" id="bgLabel">Nền 1 / 102</p>
+      <p class="bg-label" id="bgLabel">Nền 1 / …</p>
       <button type="button" class="btn btn-with-icon btn-block" id="galleryOpen">
         <i data-lucide="images"></i><span data-i18n="scene.pickWallpaper">Chọn nền</span>
       </button>
@@ -225,6 +225,9 @@
         <i data-lucide="x"></i>
       </button>
       <h2 class="gallery-top-title" data-i18n="gallery.title">Chọn nền</h2>
+      <button type="button" class="gallery-icon-btn" id="galleryViewToggle" data-i18n-title="gallery.viewGrid" title="Xem lưới">
+        <i data-lucide="layout-grid" id="galleryViewToggleIcon"></i>
+      </button>
       <div class="gallery-jump">
         <label class="gallery-jump-label" for="gallerySearch">#</label>
         <input type="text" class="gallery-jump-input" id="gallerySearch" data-i18n-placeholder="gallery.numberPlaceholder" placeholder="Số" inputmode="numeric" autocomplete="off" />
@@ -232,6 +235,7 @@
       </div>
     </header>
 
+    <div class="gallery-body">
     <div class="gallery-stage" id="galleryStage">
       <button type="button" class="gallery-nav gallery-nav--prev" id="galleryPrev" data-i18n-aria-label="scene.bgPrev" aria-label="Ảnh trước">
         <i data-lucide="chevron-left"></i>
@@ -245,12 +249,17 @@
       </button>
     </div>
 
-    <div class="gallery-progress" aria-hidden="true">
+    <div class="gallery-progress" id="galleryProgress" aria-hidden="true">
       <div class="gallery-progress-fill" id="galleryProgressFill"></div>
     </div>
 
+    <div class="gallery-grid-wrap" id="galleryGridWrap" hidden>
+      <div class="gallery-grid" id="galleryGrid" role="list"></div>
+    </div>
+    </div>
+
     <footer class="gallery-footer">
-      <span class="gallery-counter" id="galleryPreviewMeta">1 / 102</span>
+      <span class="gallery-counter" id="galleryPreviewMeta">1 / …</span>
       <button type="button" class="gallery-btn gallery-btn--ghost" id="galleryRandom">
         <i data-lucide="shuffle"></i><span data-i18n="gallery.random">Ngẫu nhiên</span>
       </button>

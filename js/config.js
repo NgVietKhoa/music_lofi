@@ -21,7 +21,7 @@ function isMobileBgViewport() {
   return window.matchMedia("(max-width: 900px)").matches;
 }
 
-/** Public IDs sorted 1→102, loaded from js/cloudinary-ids.json at startup */
+/** Public IDs: GET /api/backgrounds (Cloudinary, local + Vercel) */
 let CLOUDINARY_PUBLIC_IDS = [];
 
 function setCloudinaryPublicIds(ids) {

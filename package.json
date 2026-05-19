@@ -4,20 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.mjs",
-    "sync:cloudinary": "node scripts/fetch-cloudinary-ids.js"
+    "start": "node server.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "lucide": "^1.16.0",
     "youtubei.js": "^17.0.1"
-  },
-  "devDependencies": {
-    "cloudinary": "^2.10.0"
   }
 }
